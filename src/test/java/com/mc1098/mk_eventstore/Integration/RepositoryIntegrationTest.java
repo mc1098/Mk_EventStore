@@ -98,8 +98,15 @@ public class RepositoryIntegrationTest
     @AfterClass
     public static void tearDownClass() throws IOException
     {
-        String command = "powershell.exe rm -r Entity";
-        Runtime.getRuntime().exec(command);
+        File file = new File("./Entity/1/1");
+        
+        for (File f : file.listFiles())
+            f.delete();
+        
+        file = new File("./Entity");
+        for (File f : file.listFiles())
+            f.delete();
+        file.delete();
     }
     
     @Before
@@ -124,7 +131,6 @@ public class RepositoryIntegrationTest
         EventDeveloper<ShoppingCartEntity> eventDev = new EventDeveloper(repository);
         ShoppingCartEntity cart = new ShoppingCartEntity(1);
 
-        
         for (int i = 0; i < 100; i++)
         {
             String item = String.format("item%d", i);
@@ -133,23 +139,15 @@ public class RepositoryIntegrationTest
                 eventDev.put("item", item);
                 eventDev.build("AddItemEvent", cart);
             }
-            
             repository.save(cart);
-            System.out.println(String.format("save %d", i));
         }
 
         ShoppingCartEntity loadedCart1 = repository.getById(1);
-        
-        System.out.println(String.format("loaded cart version %d", cart.getLoadedVersion()));
-        
         assertEquals(cart, loadedCart1);
         
         ShoppingCartEntity loadedCart2 = repository.getById(1, 40);
-        
         assertEquals(40, loadedCart2.getLoadedVersion());
         
-        
-         
     }
 }
 
