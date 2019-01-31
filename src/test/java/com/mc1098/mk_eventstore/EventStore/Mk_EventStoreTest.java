@@ -17,10 +17,12 @@
 package com.mc1098.mk_eventstore.EventStore;
 
 import com.mc1098.mk_eventstore.Entity.EntityToken;
+import com.mc1098.mk_eventstore.Entity.Mk_Snapshot;
 import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Event.Event;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import com.mc1098.mk_eventstore.Event.EventFormat;
+import com.mc1098.mk_eventstore.Event.Mk_Event;
 import com.mc1098.mk_eventstore.Event.SimpleEventFormat;
 import com.mc1098.mk_eventstore.Page.Mk_PageDirectory;
 import com.mc1098.mk_eventstore.Page.PageDirectory;
@@ -30,9 +32,12 @@ import com.mc1098.mk_eventstore.Transaction.TransactionParser;
 import com.mc1098.mk_eventstore.Util.EventStoreUtils;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Queue;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -58,7 +63,7 @@ public class Mk_EventStoreTest
     {
         TransactionPage transactionPage;
         TransactionParser tp = new TransactionParser();
-        File file = new File("./Entity/TL");
+        File file = new File("Entity/TL");
         
         if(!file.exists())
         {
@@ -77,7 +82,7 @@ public class Mk_EventStoreTest
             transactionPage = Mk_TransactionPage.parse(file, buffer, tp);
         }
         
-        file = new File("./Entity/ENM");
+        file = new File("Entity/ENM");
         
         if(!file.exists())
             file.createNewFile();
@@ -89,8 +94,20 @@ public class Mk_EventStoreTest
     }
     
     @AfterClass
-    public static void tearDownClass()
+    public static void tearDownClass() throws Exception
     {
+        eventStore.close();
+        File file = new File("Entity/1/1");
+        
+        for (File f : file.listFiles())
+            f.delete();
+        
+        do{
+            file = file.getParentFile();
+            for (File f : file.listFiles())
+                f.delete();
+        } while(!file.getName().equals("Entity"));
+        file.delete();
     }
     
     @Before
@@ -104,42 +121,26 @@ public class Mk_EventStoreTest
     }
 
 //    /**
-//     * Test of create method, of class Mk_EventStore.
-//     */
-//    @Test
-//    public void testCreate()
-//    {
-//        System.out.println("create");
-//        PageDirectory directory = null;
-//        TransactionPage transactionPage = null;
-//        EventStore expResult = null;
-//        EventStore result = Mk_EventStore.create(directory, transactionPage);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
-
-//    /**
 //     * Test of getById method, of class Mk_EventStore.
 //     */
-    @Test
-    public void testGetById_String_long() throws Exception
-    {
-        System.out.println("getById");
-        String entityName = "TestEntity";
-        long id = 1L;
-        
-        Snapshot ss = eventStore.getSnapshot(entityName, id, 0L);
-        Queue<Event> after = eventStore.getEventsById(entityName, id, 0);
-        
-        EntityToken result = eventStore.getById(entityName, id);
-        
-        assertArrayEquals(new Snapshot[]{ss}, result.getSnapshots());
-        Event[] afters = after.toArray(new Event[after.size()]);
-        for (int i = 0; i < result.getEvents().length; i++)
-            assertTrue(EventStoreUtils.isEqual(afters[i], result.getEvents()[i]));
-        
-    }
+//    @Test
+//    public void testGetById_String_long() throws Exception
+//    {
+//        System.out.println("getById");
+//        String entityName = "TestEntity";
+//        long id = 1L;
+//        
+//        Snapshot ss = eventStore.getSnapshot(entityName, id, 0L);
+//        Queue<Event> after = eventStore.getEventsById(entityName, id, 0);
+//        
+//        EntityToken result = eventStore.getById(entityName, id);
+//        
+//        assertArrayEquals(new Snapshot[]{ss}, result.getSnapshots());
+//        Event[] afters = after.toArray(new Event[after.size()]);
+//        for (int i = 0; i < result.getEvents().length; i++)
+//            assertTrue(EventStoreUtils.isEqual(afters[i], result.getEvents()[i]));
+//        
+//    }
 
 //    /**
 //     * Test of getById method, of class Mk_EventStore.
@@ -271,19 +272,26 @@ public class Mk_EventStoreTest
 //        System.out.println("hh");
 //    }
 //
-//    /**
-//     * Test of save method, of class Mk_EventStore.
-//     */
-//    @Test
-//    public void testSave_EntityToken() throws Exception
-//    {
-//        System.out.println("save");
-//        EntityToken token = null;
-//        Mk_EventStore instance = null;
-//        instance.save(token);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
+    /**
+     * Test of save method, of class Mk_EventStore.
+     */
+    @Test
+    public void testSave_EntityToken() throws Exception
+    {
+        System.out.println("save");
+        
+        String entityName = "TestEntity";
+        long entityId = 1L;
+        
+        Snapshot snapshot = new Mk_Snapshot(entityName, entityId, 0L, new byte[]{20,30,40});
+        Event[] events = new Event[]{new Mk_Event("TestEvent", entityName, 
+                entityId, 0L, LocalDateTime.now(), 
+                new HashMap<String, Serializable>(){
+                    {put("Key", "Value");}
+                } )};
+        EntityToken token = new EntityToken(snapshot, events);
+        eventStore.save(token);
+    }
     
     
     
