@@ -218,19 +218,6 @@ public class EntityRepositoryTest
         assertEquals(expResult, des.token);
     }
 
-    /**
-     * Test of takeSnapshot method, of class EntityRepository.
-     */
-    //@Test
-//    public void testTakeSnapshot() throws Exception
-//    {
-//        System.out.println("takeSnapshot");
-//        Object t = null;
-//        EntityRepository instance = null;
-//        instance.takeSnapshot(t);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
     
 }
 
