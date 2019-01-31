@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayDeque;
 import java.util.List;
@@ -101,11 +103,10 @@ public class Mk_TransactionPage implements TransactionPage
     private synchronized void writeBytes(ByteBuffer buffer) 
             throws TransactionException
     {
-        try
+        try (FileChannel fc = FileChannel.open(file.toPath(), 
+                StandardOpenOption.APPEND))
         {
             buffer.rewind();
-            FileChannel fc = FileChannel.open(file.toPath(), 
-                    StandardOpenOption.APPEND);
             fc.write(buffer);
         } catch(IOException ex)
         {
@@ -132,7 +133,8 @@ public class Mk_TransactionPage implements TransactionPage
     @Override
     public void truncateLog() throws IOException
     {
-        try(FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.WRITE))
+        try(FileChannel fc = FileChannel.open(file.toPath(), 
+                StandardOpenOption.WRITE))
         {
             if(fc.size() != 0)
                 fc.truncate(0);
