@@ -65,6 +65,7 @@ public class RepositoryIntegrationTest
         TransactionPage transactionPage;
         TransactionParser tp = new TransactionParser();
         File file = new File("./Entity/TL");
+        System.out.println(file.getAbsoluteFile().getPath());
         
         if(!file.exists())
         {
