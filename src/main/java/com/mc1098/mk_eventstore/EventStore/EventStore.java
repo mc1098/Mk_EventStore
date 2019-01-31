@@ -38,7 +38,7 @@ import java.util.Queue;
  * 
  * @author Max Cripps <43726912+mc1098@users.noreply.github.com>
  */
-public interface EventStore
+public interface EventStore extends AutoCloseable
 {
     /**
      * Retrieves the Events Ratio per Page (ERP) for the given EntityName. 
@@ -181,6 +181,7 @@ public interface EventStore
     
     public void save(EntityToken token) throws EntityChronologicalException, 
             SerializationException, EventStoreException;
+    
     
     
     
