@@ -31,6 +31,7 @@ import com.mc1098.mk_eventstore.Page.EntityPageParser;
 import com.mc1098.mk_eventstore.Page.Mk_PageDirectory;
 import com.mc1098.mk_eventstore.Page.PageDirectory;
 import com.mc1098.mk_eventstore.Transaction.Mk_TransactionPage;
+import com.mc1098.mk_eventstore.Transaction.Mk_TransactionWorker;
 import com.mc1098.mk_eventstore.Transaction.Transaction;
 import com.mc1098.mk_eventstore.Transaction.TransactionBuilder;
 import com.mc1098.mk_eventstore.Transaction.TransactionPage;
@@ -89,32 +90,34 @@ public class Mk_EventStore implements EventStore
         EventFormat ef = new SimpleEventFormat();
         PageDirectory directory = Mk_PageDirectory.setup(ef, transactionPage);
         EntityPageParser parser = directory.getEntityPageParser();
-        TransactionWorker tw = new TransactionWorker(transactionPage, directory, parser);
+        TransactionWorker tw = new Mk_TransactionWorker(transactionPage, directory, parser);
         tw.flush();
         new Thread(tw, "Transaction Worker Thread").start();
-        return new Mk_EventStore(directory, transactionPage);
+        return new Mk_EventStore(directory, transactionPage, tw);
     }
     
     public static EventStore create(PageDirectory directory, 
             TransactionPage transactionPage) throws IOException
     {
         EntityPageParser parser = directory.getEntityPageParser();
-        TransactionWorker tw = new TransactionWorker(transactionPage, directory, parser);
+        TransactionWorker tw = new Mk_TransactionWorker(transactionPage, directory, parser);
         tw.flush();
         new Thread(tw, "Transaction Worker Thread").start();
-        return new Mk_EventStore(directory, transactionPage);
+        return new Mk_EventStore(directory, transactionPage, tw);
         
     }
     
     
     private final PageDirectory directory;
     private final TransactionPage transactionPage;
+    private final TransactionWorker transactionWorker;
     
     private Mk_EventStore(PageDirectory directory, 
-            TransactionPage transactionPage)
+            TransactionPage transactionPage, TransactionWorker transactionWorker)
     {
         this.directory = directory;
         this.transactionPage = transactionPage;
+        this.transactionWorker = transactionWorker;
     }
     
     @Override
@@ -393,6 +396,13 @@ public class Mk_EventStore implements EventStore
     private boolean hasSnapshotsAndEvents(EntityToken token)
     {
         return (token.getSnapshots().length != 0 && token.getEvents().length != 0);
+    }
+
+    @Override
+    public void close() throws Exception
+    {
+        transactionWorker.stopAfterTransaction();
+        transactionWorker.join();
     }
 
     
