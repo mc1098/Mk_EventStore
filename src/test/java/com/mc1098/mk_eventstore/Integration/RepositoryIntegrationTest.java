@@ -96,16 +96,19 @@ public class RepositoryIntegrationTest
     }
     
     @AfterClass
-    public static void tearDownClass() throws IOException
+    public static void tearDownClass() throws IOException, Exception
     {
+        eventStore.close();
         File file = new File("./Entity/1/1");
         
         for (File f : file.listFiles())
             f.delete();
         
-        file = new File("./Entity");
-        for (File f : file.listFiles())
-            f.delete();
+        do{
+            file = file.getParentFile();
+            for (File f : file.listFiles())
+                f.delete();
+        } while(!file.getName().equals("Entity"));
         file.delete();
     }
     
