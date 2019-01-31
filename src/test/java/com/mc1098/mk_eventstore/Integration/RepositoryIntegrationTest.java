@@ -64,7 +64,7 @@ public class RepositoryIntegrationTest
     {
         TransactionPage transactionPage;
         TransactionParser tp = new TransactionParser();
-        File file = new File("./Entity/TL");
+        File file = new File("Entity/TL");
         System.out.println(file.getAbsoluteFile().getPath());
         
         if(!file.exists())
@@ -84,7 +84,7 @@ public class RepositoryIntegrationTest
             transactionPage = Mk_TransactionPage.parse(file, buffer, tp);
         }
         
-        file = new File("./Entity/ENM");
+        file = new File("Entity/ENM");
         
         if(!file.exists())
             file.createNewFile();
@@ -100,7 +100,7 @@ public class RepositoryIntegrationTest
     public static void tearDownClass() throws IOException, Exception
     {
         eventStore.close();
-        File file = new File("./Entity/1/1");
+        File file = new File("Entity/1/1");
         
         for (File f : file.listFiles())
             f.delete();

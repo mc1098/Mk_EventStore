@@ -44,7 +44,7 @@ public class Mk_PageDirectory implements PageDirectory
     public static Mk_PageDirectory setup(EventFormat ef, TransactionPage transactionPage) 
             throws EventStoreException
     {
-        File enm = new File("./Entity/ENM");
+        File enm = new File("Entity/ENM");
         
         Map<String, Long> entityNames = new HashMap<>();
         Map<Long, Integer> entityErp = new HashMap<>();
@@ -186,7 +186,7 @@ public class Mk_PageDirectory implements PageDirectory
 
     private String getRelativePath(String fileName, String...dirs)
     {
-        StringBuilder sb = new StringBuilder("./");
+        StringBuilder sb = new StringBuilder("");
         for (String dir : dirs)
             sb.append(String.format("%s/", dir));
         sb.append(fileName);

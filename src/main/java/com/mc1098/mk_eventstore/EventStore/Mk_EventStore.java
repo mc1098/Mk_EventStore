@@ -63,7 +63,7 @@ public class Mk_EventStore implements EventStore
     {
         TransactionPage transactionPage;
         TransactionParser tp = new TransactionParser();
-        File file = new File("./Entity/TL");
+        File file = new File("Entity/TL");
         
         if(!file.exists())
         {
@@ -82,7 +82,7 @@ public class Mk_EventStore implements EventStore
             transactionPage = Mk_TransactionPage.parse(file, buffer, tp);
         }
         
-        file = new File("./Entity/ENM");
+        file = new File("Entity/ENM");
         
         if(!file.exists())
             file.createNewFile();
