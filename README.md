@@ -3,6 +3,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Build Status](https://travis-ci.com/mc1098/Mk_EventStore.svg?branch=master)](https://travis-ci.com/mc1098/Mk_EventStore)
 [![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/mc1098/Mk_EventStore.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/mc1098/Mk_EventStore/context:java)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=com.mc1098%3Amk_EventStore&metric=coverage)](https://sonarcloud.io/dashboard?id=com.mc1098%3Amk_EventStore)
 
 
 A simple EventStore project for saving Entity's using event sourcing. Provides a custom method for saving Events and Snapshots in an effort to reduce the amount of IO to a minimum. 
