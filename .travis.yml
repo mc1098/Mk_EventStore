@@ -7,7 +7,7 @@ addons:
   sonarcloud:
     organization: "mc1098-github"
     token:
-      secure: "8a7418de95c87c2a85c77b142e64fb4d5d0a26fb"
+      secure: SONAR_TOKEN
 
 jdk:
   - oraclejdk8
