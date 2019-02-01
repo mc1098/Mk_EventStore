@@ -1,1 +1,20 @@
 language: java
+
+dist: trusty
+sudo: required
+
+addons:
+  sonarcloud:
+    organization: "sonarcloud"
+    token:
+      secure: ca231fc887bb2b5677b2a8c02cae26d0e3fae35e
+
+jdk:
+  - oraclejdk8
+
+script:
+  - sonar-scanner
+
+cache:
+  directories:
+    - '$HOME/.sonar/cache'
