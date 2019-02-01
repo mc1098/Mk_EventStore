@@ -1,4 +1,4 @@
 language: java
 
 after_success:
-- coveralls --verbose
+  - mvn clean test jacoco:report coveralls:report
