@@ -5,6 +5,16 @@
     <artifactId>mk_EventStore</artifactId>
     <version>0.5</version>
     <packaging>jar</packaging>
+    <build>
+        <plugin>
+            <groupId>org.eluder.coveralls</groupId>
+            <artifactId>coveralls-maven-plugin</artifactId>
+            <version>4.3.0</version>
+            <configuration>
+                <repoToken>yourcoverallsprojectrepositorytoken</repoToken>
+            </configuration>
+        </plugin>
+    </build>
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
