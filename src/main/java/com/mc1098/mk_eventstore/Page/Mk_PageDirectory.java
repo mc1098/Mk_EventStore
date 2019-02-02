@@ -22,7 +22,7 @@ import com.mc1098.mk_eventstore.Event.EventFormat;
 import com.mc1098.mk_eventstore.Exception.ParseException;
 import com.mc1098.mk_eventstore.Exception.NoPageFoundException;
 import com.mc1098.mk_eventstore.Transaction.TransactionPage;
-import com.mc1098.mk_eventstore.Util.FloatingOrderedMap;
+import com.mc1098.mk_eventstore.Util.TouchMap;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -76,7 +76,7 @@ public class Mk_PageDirectory implements PageDirectory
         }
     }
     
-    private final FloatingOrderedMap<String, EntityPage> entityPages;
+    private final TouchMap<String, EntityPage> entityPages;
     private EntityPageParser entityPageParser;
     private final Map<String, Long> entityNames;
     private final Map<Long, Integer> entityERP;
@@ -87,7 +87,7 @@ public class Mk_PageDirectory implements PageDirectory
             TransactionPage transactionPage, 
             Map<String, Long> entityNames, Map<Long, Integer> entityERP)
     {
-        this.entityPages = new FloatingOrderedMap<>();
+        this.entityPages = new TouchMap<>();
         this.entityPageParser = new Mk_EntityPageParser(this, ef);
         this.entityNames = entityNames;
         this.entityERP = entityERP;
