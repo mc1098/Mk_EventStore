@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -49,7 +50,11 @@ public class TouchMap<K, V> implements Map<K, V>
     
     public V lastValue() 
     {
-        return entrySet().stream().sorted().findFirst().get().getValue();
+        Optional<Map.Entry<K, V>> value = entrySet().stream().sorted().findFirst();
+        if(value.isPresent())
+            return value.get().getValue();
+        else 
+            throw new NullPointerException("No entries in this map was found.");
     }
     
 
