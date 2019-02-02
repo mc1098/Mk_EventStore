@@ -31,34 +31,6 @@ import java.util.Arrays;
  */
 public class EventStoreUtils
 {
-    public static boolean isEqual(Serializable s, Serializable s2)
-    {
-        if(!(s.getClass().isArray() && s.getClass().isArray()))
-            return s.equals(s2);
-        
-        Class c = s.getClass();
-        Class c2 = s.getClass();
-        
-        if(c.equals(boolean[].class) && c2.equals(boolean[].class))
-            return Arrays.equals((boolean[]) s, (boolean[])s2);
-        if(c.equals(byte[].class) && c2.equals(byte[].class))
-            return Arrays.equals((byte[]) s, (byte[])s2);
-        if(c.equals(short[].class) && c2.equals(short[].class))
-            return Arrays.equals((short[]) s, (short[])s2);
-        if(c.equals(int[].class) && c2.equals(int[].class))
-            return Arrays.equals((int[]) s, (int[])s2);
-        if(c.equals(long[].class) && c2.equals(long[].class))
-            return Arrays.equals((long[]) s, (long[])s2);
-        if(c.equals(float[].class) && c2.equals(float[].class))
-            return Arrays.equals((float[]) s, (float[])s2);
-        if(c.equals(double[].class) && c2.equals(double[].class))
-            return Arrays.equals((double[]) s, (double[])s2);
-        else 
-            return Arrays.equals((Object[]) s, (Object[]) s2);
-        
-        
-    }
-    
     public static Serializable deserialise(byte[] bytes) 
             throws SerializationException
     {
