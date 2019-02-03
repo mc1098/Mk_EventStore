@@ -68,8 +68,9 @@ public class Mk_EventStore implements EventStore
         
         if(!file.exists())
         {
-            file.getParentFile().mkdirs();
-            file.createNewFile();
+            if(!(file.getParentFile().mkdirs() && file.createNewFile()))
+                throw new EventStoreException("Unable to create the required"
+                        + " directories or files in order for setup.");
             transactionPage = new Mk_TransactionPage(file, tp);
         }
         else
@@ -86,7 +87,9 @@ public class Mk_EventStore implements EventStore
         file = new File("Entity/ENM");
         
         if(!file.exists())
-            file.createNewFile();
+            if(!file.createNewFile())
+                throw new EventStoreException("Unable to create the required"
+                        + " ENM file in order for setup.");
         
         EventFormat ef = new SimpleEventFormat();
         PageDirectory directory = Mk_PageDirectory.setup(ef, transactionPage);

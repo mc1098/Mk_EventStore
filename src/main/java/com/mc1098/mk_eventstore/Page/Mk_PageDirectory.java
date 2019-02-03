@@ -279,8 +279,10 @@ public class Mk_PageDirectory implements PageDirectory
                         + "pending page as the Entity Page already exists for "
                         + "the path %s.", path));
             
-            file.getParentFile().mkdirs();
-            file.createNewFile();
+            if(!(file.getParentFile().mkdirs() && file.createNewFile()))
+                throw new EventStoreException("Unable to create the needed "
+                        + "directories or files required to confirm a pending "
+                        + "page.");
             
             try(FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.WRITE))
             {
