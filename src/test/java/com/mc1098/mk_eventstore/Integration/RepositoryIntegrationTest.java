@@ -17,32 +17,16 @@
 package com.mc1098.mk_eventstore.Integration;
 
 import com.mc1098.mk_eventstore.Entity.EntityRepository;
-import com.mc1098.mk_eventstore.Entity.Mk_Entity;
-import com.mc1098.mk_eventstore.Event.Event;
 import com.mc1098.mk_eventstore.Event.EventDeveloper;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
-import com.mc1098.mk_eventstore.Event.EventFormat;
-import com.mc1098.mk_eventstore.Event.SimpleEventFormat;
-import com.mc1098.mk_eventstore.Page.Mk_PageDirectory;
-import com.mc1098.mk_eventstore.Page.PageDirectory;
-import com.mc1098.mk_eventstore.Transaction.Mk_TransactionPage;
-import com.mc1098.mk_eventstore.Transaction.TransactionPage;
-import com.mc1098.mk_eventstore.Transaction.TransactionParser;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Objects;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import com.mc1098.mk_eventstore.Entity.EventHandler;
 import com.mc1098.mk_eventstore.EventStore.EventStore;
 import com.mc1098.mk_eventstore.EventStore.Mk_EventStore;
 
@@ -100,9 +84,9 @@ public class RepositoryIntegrationTest
     {
         System.out.println("repositoryTest");
          
-        EntityRepository<ShoppingCartEntity> repository = new EntityRepository("cart", eventStore);
-        EventDeveloper<ShoppingCartEntity> eventDev = new EventDeveloper(repository);
-        ShoppingCartEntity cart = new ShoppingCartEntity(1);
+        EntityRepository<ShoppingCartEntityExample> repository = new EntityRepository("cart", eventStore);
+        EventDeveloper<ShoppingCartEntityExample> eventDev = new EventDeveloper(repository);
+        ShoppingCartEntityExample cart = new ShoppingCartEntityExample(1);
 
         for (int i = 0; i < 100; i++)
         {
@@ -115,10 +99,10 @@ public class RepositoryIntegrationTest
             repository.save(cart);
         }
 
-        ShoppingCartEntity loadedCart1 = repository.getById(1);
+        ShoppingCartEntityExample loadedCart1 = repository.getById(1);
         assertEquals(cart, loadedCart1);
         
-        ShoppingCartEntity loadedCart2 = repository.getById(1, 40);
+        ShoppingCartEntityExample loadedCart2 = repository.getById(1, 40);
         assertEquals(40, loadedCart2.getLoadedVersion());
         
     }
@@ -126,61 +110,3 @@ public class RepositoryIntegrationTest
 
 
 
-class ShoppingCartEntity extends Mk_Entity
-{
-    
-    private final ArrayList<String> items;
-    
-    public ShoppingCartEntity(long id)
-    {
-        super(id);
-        this.items = new ArrayList<>();
-    }
-    
-    public boolean canAddItem(String item)
-    {
-        return !(item == null || item.isEmpty());
-    }
-    
-    public boolean canAddItems(String...items)
-    {
-        for (String item : items)
-            if(!canAddItem(item))
-                return false;
-        return true;
-    }
-    
-    @EventHandler("AddItemEvent")
-    public void addItem(Event e)
-    {
-        items.add(e.getValue("item"));
-    }
-    
-    @EventHandler("AddItemsEvent")
-    public void addItems(Event e)
-    {
-        items.addAll(Arrays.asList(e.getValue("items")));
-    }
-    
-    
-    @Override
-    public boolean equals(Object o)
-    {
-        if(o == null || !(o instanceof ShoppingCartEntity))
-            return false;
-        
-        ShoppingCartEntity sc = (ShoppingCartEntity) o;
-        
-        return this.items.equals(sc.items);
-    }
-
-    @Override
-    public int hashCode()
-    {
-        int hash = 3;
-        hash = 13 * hash + Objects.hashCode(this.items);
-        return hash;
-    }
-    
-    
-}
