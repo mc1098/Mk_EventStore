@@ -17,11 +17,8 @@
 package com.mc1098.mk_eventstore.Event;
 
 import com.mc1098.mk_eventstore.Exception.ParseException;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import com.mc1098.mk_eventstore.Exception.SerializationException;
+import com.mc1098.mk_eventstore.Util.EventStoreUtils;
 
 /**
  *
@@ -33,13 +30,10 @@ public class SimpleEventFormat implements EventFormat
     @Override
     public byte[] toBytes(Event event) throws ParseException
     {
-        try(ByteArrayOutputStream baos = new ByteArrayOutputStream(); 
-                ObjectOutputStream oos = new ObjectOutputStream(baos))
+        try
         {
-            oos.writeObject(event);
-            oos.flush();
-            return baos.toByteArray();
-        } catch(IOException ex)
+            return EventStoreUtils.serialise(event);
+        } catch(SerializationException ex)
         {
             throw new ParseException(ex);
         }
@@ -48,11 +42,10 @@ public class SimpleEventFormat implements EventFormat
     @Override
     public Event parse(byte[] bytes) throws ParseException
     {
-        try(ByteArrayInputStream bais = new ByteArrayInputStream(bytes); 
-                ObjectInputStream ois = new ObjectInputStream(bais))
+        try
         {
-            return (Event) ois.readObject();
-        } catch(IOException | ClassNotFoundException ex)
+            return (Event) EventStoreUtils.deserialise(bytes);
+        } catch(SerializationException ex)
         {
             throw new ParseException(ex);
         }

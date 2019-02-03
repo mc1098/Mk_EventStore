@@ -21,13 +21,13 @@ import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Event.Event;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import com.mc1098.mk_eventstore.Exception.NoPageFoundException;
+import com.mc1098.mk_eventstore.Exception.SerializationException;
 import com.mc1098.mk_eventstore.Page.EntityPage;
 import com.mc1098.mk_eventstore.Page.EntityPageParser;
 import com.mc1098.mk_eventstore.Page.PageDirectory;
-import java.io.ByteArrayInputStream;
+import com.mc1098.mk_eventstore.Util.EventStoreUtils;
 import java.io.File;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
@@ -186,15 +186,14 @@ public class Mk_TransactionWorker extends TransactionWorker
     }
 
     private void addEventToPage(EntityPage page, Transaction transaction) 
-            throws IOException, EventStoreException
+            throws EventStoreException
     {
-        try(ByteArrayInputStream bais = new ByteArrayInputStream(transaction.getData());
-                ObjectInputStream ois = new ObjectInputStream(bais))
+        try 
         {
-            Event e = (Event) ois.readObject();
+            Event e = (Event) EventStoreUtils.deserialise(transaction.getData());
             page.addToPending(e);
             page.confirmEvents(e);
-        } catch(ClassNotFoundException ex)
+        } catch(SerializationException | ClassCastException ex)
         {
             throw new EventStoreException(ex);
         }

@@ -17,13 +17,13 @@
 package com.mc1098.mk_eventstore.Network;
 
 import com.mc1098.mk_eventstore.EventStore.EventStore;
+import com.mc1098.mk_eventstore.Exception.SerializationException;
 import com.mc1098.mk_eventstore.Network.Services.EventStoreService;
 import com.mc1098.mk_eventstore.Network.Services.ServiceResult;
 import com.mc1098.mk_eventstore.Exception.ServerReadException;
-import java.io.ByteArrayInputStream;
+import com.mc1098.mk_eventstore.Util.EventStoreUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -85,17 +85,18 @@ public class ServiceServer extends Server
                 buffer.put(b);
             buffer.flip();
             byte[] packetBytes = buffer.array();
-
-            try(ByteArrayInputStream bais = new ByteArrayInputStream(packetBytes);
-                    ObjectInputStream ois = new ObjectInputStream(bais))
+            
+            try 
             {
-                EventStoreService service = (EventStoreService) ois.readObject();
+                EventStoreService service = (EventStoreService) EventStoreUtils
+                        .deserialise(packetBytes);
                 return service;
-            } catch(ClassNotFoundException ex)
+            } catch(SerializationException | ClassCastException ex)
             {
                 throw new ServerReadException("Server recieved bytes that cannot "
                         + "be deserialised into an accepted packet", ex);
             }
+            
         } catch(IOException ex)
         {
             throw new ServerReadException("Server recieved bytes in an incorrect"
