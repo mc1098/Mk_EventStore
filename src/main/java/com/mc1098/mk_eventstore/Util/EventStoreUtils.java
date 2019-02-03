@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.Arrays;
 
 /**
  *
@@ -57,5 +56,10 @@ public class EventStoreUtils
         {
             throw new SerializationException(ex);
         }
+    }
+    
+    private EventStoreUtils()
+    {
+        throw new IllegalStateException("Utility class");
     }
 }
