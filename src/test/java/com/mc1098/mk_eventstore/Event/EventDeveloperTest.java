@@ -60,11 +60,8 @@ public class EventDeveloperTest
     {
     }
 
-    /**
-     * Test of build method, of class EventDeveloper.
-     */
     @Test
-    public void testBuild()
+    public void testBuild() throws EventStoreException
     {
         System.out.println("build");
         String name = "testEvent";
@@ -85,11 +82,39 @@ public class EventDeveloperTest
         assertEquals((int)expResult.getValue("value"), (int)result.getValue("value"));
     }
     
+    @Test (expected = EventStoreException.class)
+    public void testBuild_RepoThrowsException() throws EventStoreException
+    {
+        System.out.println("build");
+        String name = "testEvent";
+        Entity_Impl entity = new Entity_Impl();
+        DummyRepository repository = new DummyRepository(true);
+        Event expResult = new Mk_Event(name, "testEntity", 1, 0, 
+                LocalDateTime.now(), 
+                new HashMap<String, Serializable>(){{put("value", 20);}});
+        
+        EventDeveloper instance = new EventDeveloper(repository);
+        instance.put("value", 20);
+        instance.build(name, entity);
+        
+    }
+    
     
     class DummyRepository implements Repository<Entity_Impl>
     {
         
+        private final boolean throwException;
         public boolean wasSnapshotRequested;
+        
+        public DummyRepository()
+        {
+            this.throwException = false;
+        }
+        
+        public DummyRepository(boolean throwException)
+        {
+            this.throwException = throwException;
+        }
 
         @Override
         public String getEntityName() {return "testEntity";}
@@ -121,6 +146,9 @@ public class EventDeveloperTest
         @Override
         public void takeSnapshot(Entity_Impl t) throws EventStoreException
         {
+            if(throwException)
+                throw new EventStoreException("Dummy Repository exception to "
+                        + "test exception handling.");
             this.wasSnapshotRequested = true;
         }
         

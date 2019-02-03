@@ -59,7 +59,7 @@ public class EventDeveloper<T extends Entity>
     
     public void put(String key, Serializable value) {eventMap.put(key, value);}
     
-    public Event build(String name, T entity) 
+    public Event build(String name, T entity) throws EventStoreException
     {
         Event e = new Mk_Event(name, repository.getEntityName(), entity.getId(), 
                 entity.getLoadedVersion() + entity.getNewEvents().length, 
@@ -75,7 +75,7 @@ public class EventDeveloper<T extends Entity>
         } catch(EventStoreException ex)
         {
             LOGGER.log(Level.INFO, null, ex);
-            return null;
+            throw ex;
         }
     }
     
