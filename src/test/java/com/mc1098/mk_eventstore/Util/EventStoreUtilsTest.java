@@ -16,6 +16,7 @@
  */
 package com.mc1098.mk_eventstore.Util;
 
+import com.mc1098.mk_eventstore.Exception.SerializationException;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import org.junit.After;
@@ -66,6 +67,15 @@ public class EventStoreUtilsTest
         Serializable result = EventStoreUtils.deserialise(bytes);
         
         assertEquals(expResult, result);
+    }
+    
+    @Test (expected = SerializationException.class)
+    public void testDeserialisation_Exception() throws SerializationException
+    {
+        System.out.println("serialisation_Exception");
+        
+        EventStoreUtils.deserialise(new byte[]{-12, 32,23});
+        
     }
     
 }
