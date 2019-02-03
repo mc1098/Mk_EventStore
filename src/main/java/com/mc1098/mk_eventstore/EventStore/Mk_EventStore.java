@@ -22,9 +22,7 @@ import com.mc1098.mk_eventstore.Event.Event;
 import com.mc1098.mk_eventstore.Event.EventFormat;
 import com.mc1098.mk_eventstore.Event.SimpleEventFormat;
 import com.mc1098.mk_eventstore.Exception.EntityChronologicalException;
-import com.mc1098.mk_eventstore.Exception.SerializationException;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
-import com.mc1098.mk_eventstore.Exception.AlreadyPendingChange;
 import com.mc1098.mk_eventstore.Page.EntityPage;
 import com.mc1098.mk_eventstore.Page.EntityPageParser;
 import com.mc1098.mk_eventstore.Page.Mk_PageDirectory;
@@ -379,7 +377,7 @@ public class Mk_EventStore implements EventStore
             List<Transaction> transactions, TransactionBuilder tb, 
             EntityPage page, long entity, long entityId, 
             Map<EntityPage, Event[]> confirmationMap) 
-            throws AlreadyPendingChange, SerializationException
+            throws EventStoreException
     {
         if(!forCurrentPage.isEmpty())
         {
