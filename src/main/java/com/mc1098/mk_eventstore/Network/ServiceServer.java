@@ -88,9 +88,8 @@ public class ServiceServer extends Server
             
             try 
             {
-                EventStoreService service = (EventStoreService) EventStoreUtils
+                return (EventStoreService) EventStoreUtils
                         .deserialise(packetBytes);
-                return service;
             } catch(SerializationException | ClassCastException ex)
             {
                 throw new ServerReadException("Server recieved bytes that cannot "
