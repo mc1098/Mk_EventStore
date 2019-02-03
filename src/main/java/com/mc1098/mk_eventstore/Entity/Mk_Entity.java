@@ -75,7 +75,6 @@ public abstract class Mk_Entity implements Entity
                     + "method that handles the Event %s", 
                     getClass().getSimpleName(), e.getName()));
         
-        m.setAccessible(true);
         try
         {
             m.invoke(this, e);
