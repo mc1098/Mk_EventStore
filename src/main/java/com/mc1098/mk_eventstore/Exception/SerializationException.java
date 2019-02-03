@@ -24,16 +24,6 @@ package com.mc1098.mk_eventstore.Exception;
 public class SerializationException extends EventStoreException
 {
 
-    public SerializationException(String string)
-    {
-        super(string);
-    }
-
-    public SerializationException(String string, Throwable thrwbl)
-    {
-        super(string, thrwbl);
-    }
-
     public SerializationException(Throwable thrwbl)
     {
         super(thrwbl);
