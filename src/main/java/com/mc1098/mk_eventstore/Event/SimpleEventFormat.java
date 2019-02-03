@@ -45,7 +45,7 @@ public class SimpleEventFormat implements EventFormat
         try
         {
             return (Event) EventStoreUtils.deserialise(bytes);
-        } catch(SerializationException ex)
+        } catch(SerializationException | ClassCastException ex)
         {
             throw new ParseException(ex);
         }

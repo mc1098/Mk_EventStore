@@ -17,8 +17,10 @@
 package com.mc1098.mk_eventstore.Event;
 
 import java.io.Serializable;
+import com.mc1098.mk_eventstore.Exception.ParseException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.Map;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -57,11 +59,8 @@ public class SimpleEventFormatTest
     {
     }
 
-    /**
-     * Test of toBytes method, of class SimpleEventFormat.
-     */
     @Test
-    public void testToBytesAndParse() throws Exception
+    public void testToBytesAndParse() throws ParseException
     {
         System.out.println("toBytesAndParse");
         Event event = new Mk_Event("name", "tName", 1, 0, LocalDateTime.now(), 
@@ -75,7 +74,29 @@ public class SimpleEventFormatTest
         assertEquals(event.getTargetEntityName(), result.getTargetEntityName());
         assertEquals(event.getTargetEntityId(), result.getTargetEntityId());
         assertEquals((int)event.getValue("value"), (int)result.getValue("value"));
+    }
+    
+    @Test (expected = ParseException.class)
+    public void testToBytes_Exception() throws ParseException
+    {
+        System.out.println("toBytes_Exception");
         
+        Map map = new HashMap();
+        map.put("keyToUnserializableObject", new Object());
+        Event e = new Mk_Event("TestEvent", "TestEntity", 1, 1, 
+                LocalDateTime.now(), map); //java erasure allows this illegal generic
+        SimpleEventFormat sef = new SimpleEventFormat();
+        sef.toBytes(e);
+        
+    }
+    
+    @Test (expected = ParseException.class)
+    public void testParse_Exception() throws ParseException
+    {
+        System.out.println("parse_Exception");
+        
+        SimpleEventFormat sef = new SimpleEventFormat();
+        sef.parse(new byte[]{23, 61, 122});
     }
 
     
