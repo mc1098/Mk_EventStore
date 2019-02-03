@@ -65,7 +65,7 @@ public class TouchMap<K, V> implements Map<K, V>
     public boolean containsValue(Object o) 
     {
         return map.values().stream()
-                .anyMatch((TouchValue tv)->{return tv.peek().equals(o);});
+                .anyMatch(tv -> tv.peek().equals(o));
     }
 
     @Override
@@ -102,7 +102,7 @@ public class TouchMap<K, V> implements Map<K, V>
     public Set<K> keySet() 
     {
         Set<K> set = new TreeSet<>();
-        map.keySet().forEach((tk)-> {set.add(tk.get());});
+        map.keySet().forEach(tk -> set.add(tk.get()));
         return set;
     }
 
@@ -110,7 +110,7 @@ public class TouchMap<K, V> implements Map<K, V>
     public Collection<V> values()
     {
         Collection<V> c = new ArrayList<>();
-        map.values().forEach((v)->{c.add(v.get());});
+        map.values().forEach(v -> c.add(v.get()));
         return c;
     }
 
@@ -118,7 +118,7 @@ public class TouchMap<K, V> implements Map<K, V>
     public Set<Entry<K, V>> entrySet()
     {
         Set<Entry<K,V>> set = new LinkedHashSet<>();
-        map.entrySet().forEach((e)->{set.add(new WrapperEntry(e));});
+        map.entrySet().forEach(e -> set.add(new WrapperEntry(e)));
         return set;
     }
 
@@ -135,8 +135,8 @@ public class TouchMap<K, V> implements Map<K, V>
     @Override
     public void forEach(BiConsumer<? super K, ? super V> bc)
     {
-        entrySet().stream().sorted().forEach((t) ->
-        {bc.accept(t.getKey(), t.getValue());});
+        entrySet().stream().sorted().forEach(t -> bc
+                .accept(t.getKey(), t.getValue()));
     }
     
     
