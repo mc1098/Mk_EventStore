@@ -141,7 +141,7 @@ public class Mk_TransactionWorker extends TransactionWorker
 
     private void processEventTransaction(long entity, long entityId, 
             long expPageId, Transaction transaction) 
-            throws EventStoreException, IOException
+            throws EventStoreException
     {
         EntityPage page = directory.getEntityPage(entity, entityId,
                 expPageId);
