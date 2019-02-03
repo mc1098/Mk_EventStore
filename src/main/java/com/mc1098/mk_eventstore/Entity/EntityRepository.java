@@ -126,7 +126,12 @@ public class EntityRepository<T extends Entity> implements Repository<T>
         if(snapshots.containsKey(t.getId()))
             snapshots.get(t.getId()).add(ss);
         else 
-            snapshots.put(t.getId(), new ArrayDeque<Snapshot>(){{add(ss);}});
+        {
+            ArrayDeque<Snapshot> deque = new ArrayDeque<>();
+            deque.add(ss);
+            snapshots.put(t.getId(), deque);
+        }
+        
     }
     
 }
