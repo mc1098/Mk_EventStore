@@ -86,8 +86,7 @@ public class Mk_EventStore implements EventStore
         
         file = new File("Entity/ENM");
         
-        if(!file.exists())
-            if(!file.createNewFile())
+        if(!file.exists() && !file.createNewFile())
                 throw new EventStoreException("Unable to create the required"
                         + " ENM file in order for setup.");
         

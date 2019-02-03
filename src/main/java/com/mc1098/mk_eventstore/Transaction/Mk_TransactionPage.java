@@ -129,10 +129,9 @@ public class Mk_TransactionPage implements TransactionPage
     @Override
     public void confirmTransactionProcessed(Transaction transaction)
     {
-        if(transactions.contains(transaction))
-            if(!transactions.remove(transaction))
-                LOGGER.log(Level.INFO, "Removal of transaction failed when "
-                        + "confirming it was processed.");
+        if(!transactions.remove(transaction))
+            LOGGER.log(Level.INFO, "Removal of transaction failed when "
+                    + "confirming it was processed.");
     }
     
     @Override
