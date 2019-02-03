@@ -16,54 +16,49 @@
  */
 package com.mc1098.mk_eventstore.Transaction;
 
+import com.mc1098.mk_eventstore.Exception.ParseException;
 import java.nio.ByteBuffer;
 
 /**
  *
  * @author Max Cripps <43726912+mc1098@users.noreply.github.com>
  */
-public class TransactionParser
+public interface TransactionParser
 {
     
-    /*
-    Events:
-    size type pageId   entity   entityId    version     data      
-    0x14 0x01 0x01     0x01     0x01        0x00        0x0080 0x842 0x8421 
-    Snapshot:
-    size type pageId entity entityId    version    data
-    0x14 0x02 0x01   0x01   0x01        0x00       0x0x00842182
-    */
+    public Transaction parse(ByteBuffer buffer) throws ParseException;
+    public byte[] toBytes(Transaction transaction);
     
-    public Transaction parse(ByteBuffer buffer)
-    {
-//        int size = buffer.getInt();
-        TransactionType type = TransactionType.values()[buffer.get()];
-        long pageId = buffer.getLong();
-        long entity = buffer.getLong();
-        long entityId = buffer.getLong();
-        long version = buffer.getLong();
-        int dataSize = buffer.getInt();
-        byte[] data = new byte[dataSize];
-        buffer.get(data);
-        
-        return new Transaction(type, pageId, entity, entityId, version, data);
-    }
     
-    public byte[] toBytes(Transaction transaction)
-    {
-        int size = Byte.BYTES + (Long.BYTES * 4) + Integer.BYTES + transaction.getData().length;
-        
-        byte[] bytes = new byte[size];
-        ByteBuffer buffer = ByteBuffer.wrap(bytes);
-        buffer.rewind();
-        //buffer.putInt(size);
-        buffer.put((byte)transaction.getType().ordinal());
-        buffer.putLong(transaction.getPageId());
-        buffer.putLong(transaction.getEntity());
-        buffer.putLong(transaction.getEntityId());
-        buffer.putLong(transaction.getVersion());
-        buffer.putInt(transaction.getData().length);
-        buffer.put(transaction.getData());
-        return buffer.array();
-    }
+    
+//    public Transaction parse(ByteBuffer buffer)
+//    {
+//        TransactionType type = TransactionType.values()[buffer.get()];
+//        long pageId = buffer.getLong();
+//        long entity = buffer.getLong();
+//        long entityId = buffer.getLong();
+//        long version = buffer.getLong();
+//        int dataSize = buffer.getInt();
+//        byte[] data = new byte[dataSize];
+//        buffer.get(data);
+//        
+//        return new Transaction(type, pageId, entity, entityId, version, data);
+//    }
+//    
+//    public byte[] toBytes(Transaction transaction)
+//    {
+//        int size = Byte.BYTES + (Long.BYTES * 4) + Integer.BYTES + transaction.getData().length;
+//        
+//        byte[] bytes = new byte[size];
+//        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+//        buffer.rewind();
+//        buffer.put((byte)transaction.getType().ordinal());
+//        buffer.putLong(transaction.getPageId());
+//        buffer.putLong(transaction.getEntity());
+//        buffer.putLong(transaction.getEntityId());
+//        buffer.putLong(transaction.getVersion());
+//        buffer.putInt(transaction.getData().length);
+//        buffer.put(transaction.getData());
+//        return buffer.array();
+//    }
 }

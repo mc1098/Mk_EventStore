@@ -61,36 +61,7 @@ public class Mk_EventStoreTest
     @BeforeClass
     public static void setUpClass() throws EventStoreException, IOException
     {
-        TransactionPage transactionPage;
-        TransactionParser tp = new TransactionParser();
-        File file = new File("Entity/TL");
-        
-        if(!file.exists())
-        {
-            file.getParentFile().mkdirs();
-            file.createNewFile();
-            transactionPage = new Mk_TransactionPage(file, tp);
-        }
-        else
-        {
-            ByteBuffer buffer;
-            try(FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.READ))
-            {
-                buffer = ByteBuffer.allocate((int)fc.size());
-                while (fc.read(buffer) > 0) {};
-            }
-            transactionPage = Mk_TransactionPage.parse(file, buffer, tp);
-        }
-        
-        file = new File("Entity/ENM");
-        
-        if(!file.exists())
-            file.createNewFile();
-        
-        EventFormat ef = new SimpleEventFormat();
-        PageDirectory directory = Mk_PageDirectory.setup(ef, transactionPage);
-        
-        eventStore =  Mk_EventStore.create(directory, transactionPage);
+        eventStore =  Mk_EventStore.create();
     }
     
     @AfterClass

@@ -62,38 +62,7 @@ public class RepositoryIntegrationTest
     @BeforeClass
     public static void setUpClass() throws IOException, EventStoreException
     {
-        TransactionPage transactionPage;
-        TransactionParser tp = new TransactionParser();
-        File file = new File("Entity/TL");
-        System.out.println(file.getAbsoluteFile().getPath());
-        
-        if(!file.exists())
-        {
-            file.getParentFile().mkdirs();
-            file.createNewFile();
-            transactionPage = new Mk_TransactionPage(file, tp);
-        }
-        else
-        {
-            ByteBuffer buffer;
-            try(FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.READ))
-            {
-                buffer = ByteBuffer.allocate((int)fc.size());
-                while (fc.read(buffer) > 0) {};
-            }
-            transactionPage = Mk_TransactionPage.parse(file, buffer, tp);
-        }
-        
-        file = new File("Entity/ENM");
-        
-        if(!file.exists())
-            file.createNewFile();
-        
-        EventFormat ef = new SimpleEventFormat();
-        PageDirectory directory = Mk_PageDirectory.setup(ef, transactionPage);
-        
-        eventStore =  Mk_EventStore.create(directory, transactionPage);
-        
+        eventStore =  Mk_EventStore.create();
     }
     
     @AfterClass

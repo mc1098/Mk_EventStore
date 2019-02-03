@@ -31,6 +31,7 @@ import com.mc1098.mk_eventstore.Page.EntityPageParser;
 import com.mc1098.mk_eventstore.Page.Mk_PageDirectory;
 import com.mc1098.mk_eventstore.Page.PageDirectory;
 import com.mc1098.mk_eventstore.Transaction.Mk_TransactionPage;
+import com.mc1098.mk_eventstore.Transaction.Mk_TransactionParser;
 import com.mc1098.mk_eventstore.Transaction.Mk_TransactionWorker;
 import com.mc1098.mk_eventstore.Transaction.Transaction;
 import com.mc1098.mk_eventstore.Transaction.TransactionBuilder;
@@ -62,7 +63,7 @@ public class Mk_EventStore implements EventStore
     public static EventStore create() throws IOException, EventStoreException
     {
         TransactionPage transactionPage;
-        TransactionParser tp = new TransactionParser();
+        TransactionParser tp = new Mk_TransactionParser();
         File file = new File("Entity/TL");
         
         if(!file.exists())
