@@ -18,11 +18,9 @@ package com.mc1098.mk_eventstore.Transaction;
 
 import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Event.Event;
+import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import com.mc1098.mk_eventstore.Exception.SerializationException;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import com.mc1098.mk_eventstore.Util.EventStoreUtils;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,37 +41,24 @@ public class TransactionBuilder
     }
     
     public Transaction build(long pageId, long entity, long entityId, 
-            Event event) throws SerializationException
+            Event event) throws EventStoreException
     {
-        byte[] bytes = serialise(event);
+        byte[] bytes = EventStoreUtils.serialise(event);
         
         return new Transaction(TransactionType.PUT_EVENT, pageId, entity, 
                 entityId, event.getVersion(), bytes);
     }
     
     public List<Transaction> build(long pageId, long entity, long entityId, 
-            Event[] events) throws SerializationException
+            Event[] events) throws EventStoreException
     {
+        if(events.length == 0)
+            throw new EventStoreException("Transaction cannot be made with "
+                    + "no events.");
         List<Transaction> list = new ArrayList<>();
         for (Event e : events)
             list.add(build(pageId, entity, entityId, e));
         return list;
-    }
-    
-    private byte[] serialise(Serializable serializable) 
-            throws SerializationException
-    {
-        try(ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ObjectOutputStream oos = new ObjectOutputStream(baos))
-        {
-            oos.writeObject(serializable);
-            oos.flush();
-            return baos.toByteArray();
-        } catch(IOException ex)
-        {
-            throw new SerializationException("Unable to serialize an event object "
-                    + "when creating a transaction!", ex);
-        }
     }
     
 }
