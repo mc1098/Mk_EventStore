@@ -100,11 +100,13 @@ public class EntityTokenTest
         EntityToken token = new EntityToken(snapshot, new Event[0]);
         EntityToken tokenCopy = new EntityToken(new Snapshot[]{snapshot}, new Event[0]);
         EntityToken token2 = new EntityToken(snapshot, new Event[]{e});
+        EntityToken token3 = new EntityToken(new Snapshot[0], new Event[]{e});
         
         assertEquals(token, token);//sanity check
         assertEquals("Expect these two tokens to be equal even when initialised "
                 + "with different constructors.",token, tokenCopy);
         assertNotEquals(token, token2);
+        assertNotEquals(token, token3);
         assertNotEquals(token, new Object());
     }
 
