@@ -18,7 +18,6 @@ package com.mc1098.mk_eventstore.Page;
 
 import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
-import com.mc1098.mk_eventstore.Exception.NoPageFoundException;
 import com.mc1098.mk_eventstore.Transaction.TransactionPage;
 import java.util.List;
 

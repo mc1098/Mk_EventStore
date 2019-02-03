@@ -25,7 +25,6 @@ import com.mc1098.mk_eventstore.Exception.EntityChronologicalException;
 import com.mc1098.mk_eventstore.Exception.SerializationException;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import com.mc1098.mk_eventstore.Exception.AlreadyPendingChange;
-import com.mc1098.mk_eventstore.Exception.TransactionException;
 import com.mc1098.mk_eventstore.Page.EntityPage;
 import com.mc1098.mk_eventstore.Page.EntityPageParser;
 import com.mc1098.mk_eventstore.Page.Mk_PageDirectory;
