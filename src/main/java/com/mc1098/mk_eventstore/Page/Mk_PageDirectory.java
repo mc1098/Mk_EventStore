@@ -116,7 +116,7 @@ public class Mk_PageDirectory implements PageDirectory
         if(entityNames.containsKey(entityName))
             return entityNames.get(entityName);
         
-        long entity = entityNames.size()+1;
+        long entity = entityNames.size() + 1L;
         entityNames.put(entityName, entity);
         return entity;
     }
@@ -151,7 +151,7 @@ public class Mk_PageDirectory implements PageDirectory
     {
         File file = getRelativeFile(Long.toHexString(id), "Entity",
                 Long.toHexString(entity));
-        return file.list().length-1;
+        return file.list().length - 1L;
     }
     
     private EntityPage getPageFromFile(File file) throws EventStoreException
