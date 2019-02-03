@@ -85,7 +85,6 @@ public abstract class Server implements Runnable, AutoCloseable
         }catch(IOException ex)
         {
             exception = ex;
-            return;
         }
         
     }

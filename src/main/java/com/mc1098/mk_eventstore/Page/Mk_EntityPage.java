@@ -127,7 +127,7 @@ public class Mk_EntityPage implements EntityPage
     @Override
     public boolean equals(Object o)
     {
-        if(o == null || !(o instanceof Mk_EntityPage))
+        if(!(o instanceof Mk_EntityPage))
             return false;
         
         Mk_EntityPage ep = (Mk_EntityPage) o;
@@ -138,7 +138,6 @@ public class Mk_EntityPage implements EntityPage
                 this.eventPageRatio == ep.eventPageRatio && 
                 this.snapshot.equals(ep.snapshot) && 
                 this.events.containsAll(ep.events));
-                //this.events.equals(ep.events)); 
     }
 
     @Override

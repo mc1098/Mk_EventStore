@@ -87,7 +87,7 @@ public class Mk_Event implements Event
     @Override
     public boolean equals(Object o)
     {
-        if(o == null || !(o instanceof Mk_Event))
+        if(!(o instanceof Mk_Event))
             return false;
         
         Mk_Event e = (Mk_Event) o;

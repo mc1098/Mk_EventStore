@@ -58,6 +58,7 @@ public class Mk_TransactionWorker extends TransactionWorker
         this.directory = directory;
         this.entityPageParser = parser;
         this.run = new AtomicBoolean(true);
+        this.setName("Transaction Worker Thread");
     }
 
     @Override
@@ -168,7 +169,7 @@ public class Mk_TransactionWorker extends TransactionWorker
             transactionPage.confirmTransactionProcessed(transaction);
     }
 
-    private void writePage(EntityPage page, byte[] bytes) 
+    private void writePage(EntityPage page, byte[] bytes)  throws EventStoreException
     {
         File file = new File(String.format("./Entity/%s/%s/%s",  
                 Long.toHexString(page.getEntity()), 
@@ -181,7 +182,7 @@ public class Mk_TransactionWorker extends TransactionWorker
             fc.write(ByteBuffer.wrap(bytes));
         } catch(IOException ex)
         {
-            System.out.println(ex);
+            throw new EventStoreException("Failed to write Entity Page.", ex);
         }
     }
 

@@ -20,9 +20,7 @@ import com.mc1098.mk_eventstore.Entity.EntityToken;
 import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Event.Event;
 import com.mc1098.mk_eventstore.Exception.EntityChronologicalException;
-import com.mc1098.mk_eventstore.Exception.SerializationException;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
-import com.mc1098.mk_eventstore.Exception.ThreadingException;
 import java.util.Queue;
 
 /**
@@ -172,15 +170,12 @@ public interface EventStore extends AutoCloseable
      * @throws EntityChronologicalException
      * @throws EventStoreException 
      */
-    public void saveSnapshot(Snapshot ss) throws EntityChronologicalException, 
-            EventStoreException;
+    public void saveSnapshot(Snapshot ss) throws  EventStoreException;
     
     public void save(String entityName, long id, long loadedVersion, 
-            Event[] events) throws EntityChronologicalException, 
-            SerializationException, ThreadingException, EventStoreException;
+            Event[] events) throws EventStoreException;
     
-    public void save(EntityToken token) throws EntityChronologicalException, 
-            SerializationException, EventStoreException;
+    public void save(EntityToken token) throws EventStoreException;
     
     
     

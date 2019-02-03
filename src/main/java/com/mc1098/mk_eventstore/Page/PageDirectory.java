@@ -33,14 +33,13 @@ public interface PageDirectory
     public boolean hasEntity(String entityName);
     public int getEPR(long entity);
     public boolean doesPageExist(long entity, long entityId, long pageNo);
-    public EntityPage getEntityPage(long entity, long id) 
-            throws EventStoreException, NoPageFoundException;
+    public EntityPage getEntityPage(long entity, long id) throws EventStoreException;
     public EntityPage getEntityPage(long entity, long id, long pageNo) 
-            throws EventStoreException, NoPageFoundException;
+            throws EventStoreException;
     public List<EntityPage> getEntityPages(long entity, long id, long pageFrom) 
-            throws EventStoreException, NoPageFoundException;
+            throws EventStoreException;
     public List<EntityPage> getEntityPages(long entity, long id, long pageNo, long pageNo1) 
-            throws EventStoreException, NoPageFoundException;
+            throws EventStoreException;
     public EntityPage createPendingEntityPage(long entity, long id, long pageNo, Snapshot snapshot);
     public EntityPage confirmPendingPage(EntityPage page) throws EventStoreException;
     public TransactionPage getTransactionPage();

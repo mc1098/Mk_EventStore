@@ -65,7 +65,7 @@ public class EntityRepository<T extends Entity> implements Repository<T>
     }
     
     protected T tokenToEntity(EntityToken token) 
-            throws SerializationException, EventStoreException
+            throws EventStoreException
     {
         if(token.getSnapshots().length != 1)
             throw new EventStoreException("Only expecting one snapshot from "

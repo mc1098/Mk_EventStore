@@ -16,10 +16,8 @@
  */
 package com.mc1098.mk_eventstore.Transaction;
 
-import com.mc1098.mk_eventstore.Entity.EntityToken;
 import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Event.Event;
-import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import com.mc1098.mk_eventstore.Exception.SerializationException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

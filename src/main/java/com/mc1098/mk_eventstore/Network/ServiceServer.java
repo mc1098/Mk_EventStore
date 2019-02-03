@@ -86,20 +86,25 @@ public class ServiceServer extends Server
             buffer.flip();
             byte[] packetBytes = buffer.array();
             
-            try 
-            {
-                return (EventStoreService) EventStoreUtils
-                        .deserialise(packetBytes);
-            } catch(SerializationException | ClassCastException ex)
-            {
-                throw new ServerReadException("Server recieved bytes that cannot "
-                        + "be deserialised into an accepted packet", ex);
-            }
+            return deserialiseToEventStoreService(packetBytes);
             
         } catch(IOException ex)
         {
             throw new ServerReadException("Server recieved bytes in an incorrect"
                     + " format. The server is set to recieve packets", ex);
+        }
+    }
+
+    private EventStoreService deserialiseToEventStoreService(byte[] packetBytes) throws ServerReadException
+    {
+        try
+        {
+            return (EventStoreService) EventStoreUtils
+                    .deserialise(packetBytes);
+        } catch(SerializationException | ClassCastException ex)
+        {
+            throw new ServerReadException("Server recieved bytes that cannot "
+                    + "be deserialised into an accepted packet", ex);
         }
     }
 

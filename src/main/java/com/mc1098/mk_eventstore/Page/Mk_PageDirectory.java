@@ -52,7 +52,11 @@ public class Mk_PageDirectory implements PageDirectory
         try(FileChannel fc = FileChannel.open(enm.toPath(), StandardOpenOption.READ))
         {
             ByteBuffer buffer = ByteBuffer.allocate((int)fc.size());
-            while(fc.read(buffer) > 0){};
+            int read;
+            do
+            {                
+                read = fc.read(buffer);
+            } while (read > 0);
             buffer.rewind();
             while (buffer.hasRemaining())
             {                
@@ -76,6 +80,7 @@ public class Mk_PageDirectory implements PageDirectory
         }
     }
     
+    private final String entityRoot = "Entity";
     private final TouchMap<String, EntityPage> entityPages;
     private EntityPageParser entityPageParser;
     private final Map<String, Long> entityNames;
@@ -131,16 +136,16 @@ public class Mk_PageDirectory implements PageDirectory
     
     @Override
     public EntityPage getEntityPage(long entity, long id) 
-            throws EventStoreException, NoPageFoundException
+            throws EventStoreException
     {
         long pageNo = getMostRecentPageNo(id, entity);
-        String path = getRelativePath(Long.toHexString(pageNo), "Entity", 
+        String path = getRelativePath(Long.toHexString(pageNo), entityRoot, 
                 Long.toHexString(entity), Long.toHexString(id));
         
         if(entityPages.containsKey(path))
             return entityPages.get(path);
         
-        File file = getRelativeFile(Long.toHexString(pageNo), "Entity", 
+        File file = getRelativeFile(Long.toHexString(pageNo), entityRoot, 
                 Long.toHexString(entity), Long.toHexString(id));
         
         return getPageFromFile(file);
@@ -149,7 +154,7 @@ public class Mk_PageDirectory implements PageDirectory
     private long getMostRecentPageNo(long id, long entity) 
             throws NoPageFoundException
     {
-        File file = getRelativeFile(Long.toHexString(id), "Entity",
+        File file = getRelativeFile(Long.toHexString(id), entityRoot,
                 Long.toHexString(entity));
         return file.list().length - 1L;
     }
@@ -196,7 +201,7 @@ public class Mk_PageDirectory implements PageDirectory
     @Override
     public boolean doesPageExist(long entity, long id, long pageNo)
     {
-        String path = getRelativePath(Long.toHexString(pageNo), "Entity",
+        String path = getRelativePath(Long.toHexString(pageNo), entityRoot,
                 Long.toHexString(entity), Long.toHexString(id));
         
         if(entityPages.containsKey(path))
@@ -206,9 +211,9 @@ public class Mk_PageDirectory implements PageDirectory
     
     @Override
     public EntityPage getEntityPage(long entity, long id, long pageNo) throws 
-            EventStoreException, NoPageFoundException
+            EventStoreException
     {
-        File file = getRelativeFile(Long.toHexString(pageNo), "Entity", 
+        File file = getRelativeFile(Long.toHexString(pageNo), entityRoot, 
                 Long.toHexString(entity), Long.toHexString(id));
         
         if(entityPages.containsKey(file.getPath()))
@@ -219,9 +224,9 @@ public class Mk_PageDirectory implements PageDirectory
 
     @Override
     public List<EntityPage> getEntityPages(long entity, long id, long pageFrom) throws 
-            EventStoreException, NoPageFoundException
+            EventStoreException
     {
-        File file = getRelativeFile(Long.toHexString(id), "Entity", 
+        File file = getRelativeFile(Long.toHexString(id), entityRoot, 
                 Long.toHexString(entity));
         long files = file.list().length;
         
@@ -230,7 +235,7 @@ public class Mk_PageDirectory implements PageDirectory
 
     @Override
     public List<EntityPage> getEntityPages(long entity, long id, long pageNo, long pageNo1) 
-            throws EventStoreException, NoPageFoundException
+            throws EventStoreException
     {
         List<EntityPage> pages = new ArrayList<>();
         
@@ -243,7 +248,7 @@ public class Mk_PageDirectory implements PageDirectory
     public EntityPage createPendingEntityPage(long entity, long id, 
             long pageNo, Snapshot snapshot)
     {
-        String path = getRelativePath(Long.toHexString(pageNo), "Entity",
+        String path = getRelativePath(Long.toHexString(pageNo), entityRoot,
                 Long.toHexString(entity), Long.toHexString(id));
         EntityPage page = new Mk_EntityPage(pageNo, entity, id, 
                 getEPR(entity), snapshot);
@@ -256,10 +261,10 @@ public class Mk_PageDirectory implements PageDirectory
             throws EventStoreException
     {
         String entityPath = getRelativePath(Long.toHexString(page.getEntity()), 
-                "Entity");
+                entityRoot);
         
         String path = getRelativePath(Long.toHexString(page.getPageId()), 
-                "Entity", Long.toHexString(page.getEntity()), 
+                entityRoot, Long.toHexString(page.getEntity()), 
                 Long.toHexString(page.getEntityId()));
         
         if(!pending.containsKey(path))
@@ -318,7 +323,7 @@ public class Mk_PageDirectory implements PageDirectory
         buffer.rewind();
         
         file.mkdir();
-        String enmPath = getRelativePath("ENM", "Entity");
+        String enmPath = getRelativePath("ENM", entityRoot);
         File enm = new File(enmPath);
         try(FileChannel fc = FileChannel.open(enm.toPath(), StandardOpenOption.APPEND))
         {

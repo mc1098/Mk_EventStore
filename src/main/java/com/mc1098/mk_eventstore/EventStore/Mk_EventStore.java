@@ -79,7 +79,11 @@ public class Mk_EventStore implements EventStore
             try(FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.READ))
             {
                 buffer = ByteBuffer.allocate((int)fc.size());
-                while (fc.read(buffer) > 0) {};
+                int read;
+                do
+                {
+                    read = fc.read(buffer);
+                } while(read > 0);
             }
             transactionPage = Mk_TransactionPage.parse(file, buffer, tp);
         }
@@ -95,7 +99,7 @@ public class Mk_EventStore implements EventStore
         EntityPageParser parser = directory.getEntityPageParser();
         TransactionWorker tw = new Mk_TransactionWorker(transactionPage, directory, parser);
         tw.flush();
-        new Thread(tw, "Transaction Worker Thread").start();
+        tw.start();
         return new Mk_EventStore(directory, transactionPage, tw);
     }
     
@@ -105,7 +109,7 @@ public class Mk_EventStore implements EventStore
         EntityPageParser parser = directory.getEntityPageParser();
         TransactionWorker tw = new Mk_TransactionWorker(transactionPage, directory, parser);
         tw.flush();
-        new Thread(tw, "Transaction Worker Thread").start();
+        tw.start();
         return new Mk_EventStore(directory, transactionPage, tw);
         
     }
@@ -221,8 +225,7 @@ public class Mk_EventStore implements EventStore
     }
     
     @Override
-    public void saveSnapshot(Snapshot ss) throws EntityChronologicalException, 
-            TransactionException, EventStoreException
+    public void saveSnapshot(Snapshot ss) throws EventStoreException
     {
         long entity = directory.getEntity(ss.getEntityName());
         int erp = directory.getEPR(entity);
@@ -234,7 +237,8 @@ public class Mk_EventStore implements EventStore
         Transaction transaction = tb.build(pageId, entity, ss.getEntityId(), 
                 ss);
         
-        EntityPage page = directory.createPendingEntityPage(entity, ss.getEntityId(), pageId, ss);
+        EntityPage page = directory.createPendingEntityPage(entity, 
+                ss.getEntityId(), pageId, ss);
         transactionPage.writeTransaction(transaction);
         directory.confirmPendingPage(page);
         transactionPage.refresh();
@@ -242,7 +246,7 @@ public class Mk_EventStore implements EventStore
     
     private void validate(long entity, int erp, Snapshot snapshot, 
             long pendingEvents) 
-            throws EntityChronologicalException, EventStoreException
+            throws EventStoreException
     {
         if(snapshot.getVersion() % erp != 0)
             throw new EntityChronologicalException(String.format("Unexpected "
@@ -271,9 +275,7 @@ public class Mk_EventStore implements EventStore
 
     @Override
     public void save(String entityName, long id, long loadedVersion, 
-            Event[] events) throws EntityChronologicalException, 
-            SerializationException, AlreadyPendingChange, 
-            EventStoreException
+            Event[] events) throws EventStoreException
     {
         long entity = directory.getEntity(entityName);
         EntityPage page = directory.getEntityPage(entity, id);
@@ -298,21 +300,18 @@ public class Mk_EventStore implements EventStore
     }
 
     @Override
-    public void save(EntityToken token) throws EntityChronologicalException, 
-            SerializationException, EventStoreException
+    public void save(EntityToken token) throws EventStoreException
     {
         if(!hasSnapshotsAndEvents(token))
             throw new EventStoreException("Entity token does not contain both "
                     + "snapshot and events.");
         
-        SortedSet<Snapshot> snapshots = new TreeSet<>((s, s1) ->{
-            return Long.compare(s.getVersion(), s1.getVersion());
-        });
+        SortedSet<Snapshot> snapshots = new TreeSet<>((s, s1) ->
+            Long.compare(s.getVersion(), s1.getVersion()));
         snapshots.addAll(Arrays.asList(token.getSnapshots()));
         
-        SortedSet<Event> events = new TreeSet<>((e, e1) -> {
-            return Long.compare(e.getVersion(), e1.getVersion());
-        });
+        SortedSet<Event> events = new TreeSet<>((e, e1) -> 
+            Long.compare(e.getVersion(), e1.getVersion()));
         events.addAll(Arrays.asList(token.getEvents()));
         
         saveFromSortedSets(snapshots, events);
@@ -320,8 +319,7 @@ public class Mk_EventStore implements EventStore
     }
 
     private void saveFromSortedSets(SortedSet<Snapshot> snapshots, 
-            SortedSet<Event> events) throws SerializationException, 
-            EventStoreException, TransactionException, AlreadyPendingChange
+            SortedSet<Event> events) throws EventStoreException
     {
         Snapshot s1 = snapshots.first();
         Event e1 = events.first();

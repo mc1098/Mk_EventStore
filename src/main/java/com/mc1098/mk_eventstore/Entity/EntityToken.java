@@ -48,7 +48,7 @@ public class EntityToken implements Serializable
     @Override
     public boolean equals(Object o)
     {
-        if(o == null | !(o instanceof EntityToken))
+        if(!(o instanceof EntityToken))
             return false;
         
         EntityToken et = (EntityToken) o;

@@ -16,11 +16,13 @@
  */
 package com.mc1098.mk_eventstore.Entity;
 
+import java.io.Serializable;
+
 /**
  * The Snapshot interface is used by the Event Store to wrap serialised data.
  * @author Max Cripps <43726912+mc1098@users.noreply.github.com>
  */
-public interface Snapshot
+public interface Snapshot extends Serializable
 {
     /**
      * @return Returns the Entity name for this snapshot.

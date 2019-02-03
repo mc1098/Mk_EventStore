@@ -57,7 +57,7 @@ public class Mk_Snapshot implements Snapshot
     @Override
     public boolean equals(Object o)
     {
-        if(o == null || !(o instanceof Mk_Snapshot))
+        if(!(o instanceof Mk_Snapshot))
             return false;
         
         Mk_Snapshot ss = (Mk_Snapshot)o;
