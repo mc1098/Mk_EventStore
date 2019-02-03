@@ -80,7 +80,9 @@ public class Mk_PageDirectory implements PageDirectory
         }
     }
     
-    private final String entityRoot = "Entity";
+    public static final String ENTITY_ROOT = "Entity";
+    
+    
     private final TouchMap<String, EntityPage> entityPages;
     private EntityPageParser entityPageParser;
     private final Map<String, Long> entityNames;
@@ -139,13 +141,13 @@ public class Mk_PageDirectory implements PageDirectory
             throws EventStoreException
     {
         long pageNo = getMostRecentPageNo(id, entity);
-        String path = getRelativePath(Long.toHexString(pageNo), entityRoot, 
+        String path = getRelativePath(Long.toHexString(pageNo), ENTITY_ROOT, 
                 Long.toHexString(entity), Long.toHexString(id));
         
         if(entityPages.containsKey(path))
             return entityPages.get(path);
         
-        File file = getRelativeFile(Long.toHexString(pageNo), entityRoot, 
+        File file = getRelativeFile(Long.toHexString(pageNo), ENTITY_ROOT, 
                 Long.toHexString(entity), Long.toHexString(id));
         
         return getPageFromFile(file);
@@ -154,7 +156,7 @@ public class Mk_PageDirectory implements PageDirectory
     private long getMostRecentPageNo(long id, long entity) 
             throws NoPageFoundException
     {
-        File file = getRelativeFile(Long.toHexString(id), entityRoot,
+        File file = getRelativeFile(Long.toHexString(id), ENTITY_ROOT,
                 Long.toHexString(entity));
         return file.list().length - 1L;
     }
@@ -201,7 +203,7 @@ public class Mk_PageDirectory implements PageDirectory
     @Override
     public boolean doesPageExist(long entity, long id, long pageNo)
     {
-        String path = getRelativePath(Long.toHexString(pageNo), entityRoot,
+        String path = getRelativePath(Long.toHexString(pageNo), ENTITY_ROOT,
                 Long.toHexString(entity), Long.toHexString(id));
         
         if(entityPages.containsKey(path))
@@ -213,7 +215,7 @@ public class Mk_PageDirectory implements PageDirectory
     public EntityPage getEntityPage(long entity, long id, long pageNo) throws 
             EventStoreException
     {
-        File file = getRelativeFile(Long.toHexString(pageNo), entityRoot, 
+        File file = getRelativeFile(Long.toHexString(pageNo), ENTITY_ROOT, 
                 Long.toHexString(entity), Long.toHexString(id));
         
         if(entityPages.containsKey(file.getPath()))
@@ -226,7 +228,7 @@ public class Mk_PageDirectory implements PageDirectory
     public List<EntityPage> getEntityPages(long entity, long id, long pageFrom) throws 
             EventStoreException
     {
-        File file = getRelativeFile(Long.toHexString(id), entityRoot, 
+        File file = getRelativeFile(Long.toHexString(id), ENTITY_ROOT, 
                 Long.toHexString(entity));
         long files = file.list().length;
         
@@ -248,7 +250,7 @@ public class Mk_PageDirectory implements PageDirectory
     public EntityPage createPendingEntityPage(long entity, long id, 
             long pageNo, Snapshot snapshot)
     {
-        String path = getRelativePath(Long.toHexString(pageNo), entityRoot,
+        String path = getRelativePath(Long.toHexString(pageNo), ENTITY_ROOT,
                 Long.toHexString(entity), Long.toHexString(id));
         EntityPage page = new Mk_EntityPage(pageNo, entity, id, 
                 getEPR(entity), snapshot);
@@ -261,10 +263,10 @@ public class Mk_PageDirectory implements PageDirectory
             throws EventStoreException
     {
         String entityPath = getRelativePath(Long.toHexString(page.getEntity()), 
-                entityRoot);
+                ENTITY_ROOT);
         
         String path = getRelativePath(Long.toHexString(page.getPageId()), 
-                entityRoot, Long.toHexString(page.getEntity()), 
+                ENTITY_ROOT, Long.toHexString(page.getEntity()), 
                 Long.toHexString(page.getEntityId()));
         
         if(!pending.containsKey(path))
@@ -323,7 +325,7 @@ public class Mk_PageDirectory implements PageDirectory
         buffer.rewind();
         
         file.mkdir();
-        String enmPath = getRelativePath("ENM", entityRoot);
+        String enmPath = getRelativePath("ENM", ENTITY_ROOT);
         File enm = new File(enmPath);
         try(FileChannel fc = FileChannel.open(enm.toPath(), StandardOpenOption.APPEND))
         {
