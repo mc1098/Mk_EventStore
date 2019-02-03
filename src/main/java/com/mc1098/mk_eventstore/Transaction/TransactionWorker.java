@@ -24,6 +24,8 @@ import java.io.IOException;
  */
 public abstract class TransactionWorker extends Thread
 {
+    @Override
+    public abstract void run();
     public abstract void flush() throws IOException;
     public abstract void stopAfterTransaction() throws InterruptedException;
     
