@@ -16,13 +16,12 @@
  */
 package com.mc1098.mk_eventstore.Transaction;
 
+import com.mc1098.mk_eventstore.Exception.ParseException;
 import com.mc1098.mk_eventstore.Exception.TransactionException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayDeque;
 import java.util.List;
@@ -39,7 +38,7 @@ public class Mk_TransactionPage implements TransactionPage
 {
     
     public static TransactionPage parse(File file, ByteBuffer buffer, 
-            TransactionParser transactionParser)
+            TransactionParser transactionParser) throws ParseException
     {
         buffer.rewind();
         Queue<Transaction> transactions = new ArrayDeque<>();
