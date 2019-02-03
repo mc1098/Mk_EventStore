@@ -76,9 +76,6 @@ public class Mk_SnapshotTest
         assertEquals(expResult, result);
     }
 
-    /**
-     * Test of getVersion method, of class Mk_Snapshot.
-     */
     @Test
     public void testGetVersion()
     {
@@ -106,10 +103,16 @@ public class Mk_SnapshotTest
     {
         System.out.println("equals");
         Mk_Snapshot snapshot = new Mk_Snapshot("TestEntity", 1L, 0, new byte[]{20, 30, 10});
-        Mk_Snapshot snapshot2 = new Mk_Snapshot("TestEntity", 1L, 1, new byte[]{30, 20, 10});
+        Mk_Snapshot snapshot2 = new Mk_Snapshot("Test", 1L, 0, new byte[]{30, 20, 10});
+        Mk_Snapshot snapshot3 = new Mk_Snapshot("TestEntity", 2L, 0, new byte[]{20, 30, 10});
+        Mk_Snapshot snapshot4 = new Mk_Snapshot("TestEntity", 1L, 1L, new byte[]{20, 30, 10});
+        Mk_Snapshot snapshot5 = new Mk_Snapshot("TestEntity", 1L, 0, new byte[]{10, 30});
         
         assertEquals(snapshot, snapshot);//sanity check
         assertNotEquals(snapshot, snapshot2);
+        assertNotEquals(snapshot, snapshot3);
+        assertNotEquals(snapshot, snapshot4);
+        assertNotEquals(snapshot, snapshot5);
         assertNotEquals(snapshot, new Object());
     }
     
