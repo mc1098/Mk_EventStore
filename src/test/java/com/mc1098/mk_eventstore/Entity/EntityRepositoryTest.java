@@ -29,6 +29,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Queue;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -142,9 +143,9 @@ public class EntityRepositoryTest
     }
     
     @Test
-    public void testSaveSnapshotOnly() throws Exception
+    public void testSaveNoSnapshotOrEvents() throws Exception
     {
-        System.out.println("SaveSnapshotOnly");
+        System.out.println("saveNoSnapshotOrEvents");
         TestEntity entity = new TestEntity(1);
         DummyEventStore des = new DummyEventStore();
         EntityRepository<TestEntity> instance = new EntityRepository("testEntity", des);
@@ -155,6 +156,66 @@ public class EntityRepositoryTest
         assertEquals(expResult, des.snapshot);
         
     }
+    
+    @Test
+    public void testSaveWithRepoSnapshotPrior() throws Exception
+    {
+        System.out.println("saveWithRepoSnapshotPrior");
+        TestEntity entity = new TestEntity(1);
+        DummyEventStore des = new DummyEventStore();
+        EntityRepository<TestEntity> instance = new EntityRepository("testEntity", des);
+        instance.takeSnapshot(entity);
+        instance.save(entity);
+        Snapshot expResult = new Mk_Snapshot("testEntity", 1, 0, serialise(entity));
+        
+        assertNull(des.events);
+        assertEquals(expResult, des.snapshot);
+    }
+    
+    @Test
+    public void testSaveWithMultipleRepoSnapshotPrior() throws Exception
+    {
+        System.out.println("saveWithMultiplRepoSnapshotPrior");
+        TestEntity entity = new TestEntity(1);
+        DummyEventStore des = new DummyEventStore();
+        EntityRepository<TestEntity> instance = new EntityRepository("testEntity", des);
+        Snapshot snapshot1 = new Mk_Snapshot("testEntity", 1, 0, serialise(entity));
+        instance.takeSnapshot(entity);
+        
+        
+        for (int i = 0; i < 10; i++) //load entity with events to reach next version for snapshot.
+        {
+            Map map = new HashMap();
+            map.put("value", i);
+            Event e = new Mk_Event("valueEvent", "testEntity", 1, i, 
+                    LocalDateTime.now(), map);
+            entity.applyEvent(e);
+        }
+        
+        instance.takeSnapshot(entity);
+        Snapshot snapshot2 = new Mk_Snapshot("testEntity", 1, 10, serialise(entity));
+        instance.save(entity);
+        
+        Snapshot[] expResult = new Snapshot[]{snapshot1, snapshot2};
+        
+        assertNull(des.events);
+        assertNull(des.snapshot);
+        assertArrayEquals(expResult, des.token.getSnapshots());
+    }
+    
+    @Test (expected = EventStoreException.class)
+    public void testTakeSnapshotWithSameEntityState_Exception() throws EventStoreException
+    {
+        System.out.println("takeSnapshotWithSameEntityState_Exception");
+        
+        TestEntity entity = new TestEntity(1);
+        DummyEventStore des = new DummyEventStore();
+        EntityRepository<TestEntity> instance = new EntityRepository("testEntity", des);
+        
+        instance.takeSnapshot(entity);
+        instance.takeSnapshot(entity); //exception as no snapshot required.
+    }
+    
     
     
     @Test
@@ -189,7 +250,7 @@ public class EntityRepositoryTest
     @Test
     public void testSaveSnapshotAndEvents() throws Exception
     {
-        System.out.println("SaveEventsOnly");
+        System.out.println("saveSnapshotAndEvents");
         
         String entityName = "testEntity";
         long entityId = 1;
@@ -217,7 +278,7 @@ public class EntityRepositoryTest
         
         assertEquals(expResult, des.token);
     }
-
+    
     
 }
 
@@ -233,7 +294,7 @@ class DummyEventStore implements EventStore
     
 
     @Override
-    public int getERP(String entityName) {throw new UnsupportedOperationException("Not supported yet.");}
+    public int getERP(String entityName) {return 10;}
 
     @Override
     public EntityToken getById(String entityName, long id) 

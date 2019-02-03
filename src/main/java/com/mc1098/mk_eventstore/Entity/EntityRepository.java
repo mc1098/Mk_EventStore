@@ -123,7 +123,19 @@ public class EntityRepository<T extends Entity> implements Repository<T>
         Snapshot ss = new Mk_Snapshot(entityName, t.getId(), version, data);
         
         if(snapshots.containsKey(t.getId()))
-            snapshots.get(t.getId()).add(ss);
+        {
+            long lastVersion = snapshots.get(t.getId()).peek().getVersion();
+            int erp = getERP();
+            if(ss.getVersion() - lastVersion == erp)
+                snapshots.get(t.getId()).add(ss);
+            else 
+                throw new EventStoreException(String.format("Snapshots are "
+                        + "only expected on versions that are multiples of the "
+                        + "ERP and a snapshot is expected on each multiple. "
+                        + "Tried to save a snapshot with version %d where "
+                        + "the most recent snapshot was %d and the EPR is %d", 
+                        ss.getVersion(), lastVersion, erp));
+        }
         else 
         {
             ArrayDeque<Snapshot> deque = new ArrayDeque<>();
