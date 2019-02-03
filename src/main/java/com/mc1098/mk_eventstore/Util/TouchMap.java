@@ -20,19 +20,13 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiConsumer;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -108,7 +102,7 @@ public class TouchMap<K, V> implements Map<K, V>
     public Set<K> keySet() 
     {
         Set<K> set = new TreeSet<>();
-        map.keySet().forEach((tk)-> {set.add(tk.key);});
+        map.keySet().forEach((tk)-> {set.add(tk.get());});
         return set;
     }
 
@@ -145,12 +139,17 @@ public class TouchMap<K, V> implements Map<K, V>
         {bc.accept(t.getKey(), t.getValue());});
     }
     
-    class WrapperEntry<K, V> implements Entry<K, V>, Comparable<WrapperEntry<K,V>>
+    
+    
+}
+
+
+class WrapperEntry<K, V> implements Map.Entry<K, V>, Comparable<WrapperEntry<K,V>>
     {
 
-        private final Entry<TouchKey<K>, TouchValue<V>> entry;
+        private final Map.Entry<TouchKey<K>, TouchValue<V>> entry;
         
-        public WrapperEntry(Entry<TouchKey<K>, TouchValue<V>> entry)
+        public WrapperEntry(Map.Entry<TouchKey<K>, TouchValue<V>> entry)
         {
             this.entry = entry;
         }
@@ -184,7 +183,7 @@ public class TouchMap<K, V> implements Map<K, V>
             
             WrapperEntry we = (WrapperEntry) o;
             
-            return (this.entry.equals(we.entry));
+            return this.entry.equals(we.entry);
         }
 
         @Override
@@ -196,7 +195,6 @@ public class TouchMap<K, V> implements Map<K, V>
         }
         
     }
-    
     
     class TouchKey<K> implements Comparable<TouchKey<K>>
     {
@@ -264,6 +262,7 @@ public class TouchMap<K, V> implements Map<K, V>
         
         public V peek() {return value;}
         
+        @Override
         public String toString() {return value.toString();}
         
         @Override
@@ -274,7 +273,7 @@ public class TouchMap<K, V> implements Map<K, V>
             
             TouchValue tv = (TouchValue)o;
             
-            return value.equals(tv.value);
+            return this.value.equals(tv.value);
         }
 
         @Override
@@ -285,5 +284,3 @@ public class TouchMap<K, V> implements Map<K, V>
             return hash;
         }
     }
-    
-}
