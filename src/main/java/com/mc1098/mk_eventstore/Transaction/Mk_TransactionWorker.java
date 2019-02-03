@@ -20,6 +20,7 @@ import com.mc1098.mk_eventstore.Entity.Mk_Snapshot;
 import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Event.Event;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
+import com.mc1098.mk_eventstore.Exception.NoPageFoundException;
 import com.mc1098.mk_eventstore.Page.EntityPage;
 import com.mc1098.mk_eventstore.Page.EntityPageParser;
 import com.mc1098.mk_eventstore.Page.PageDirectory;
@@ -71,9 +72,10 @@ public class Mk_TransactionWorker extends TransactionWorker
     
     private void processTransactions()
     {
+        Transaction transaction = null;
         try
         {
-            Transaction transaction = transactionPage.poll(5, TimeUnit.SECONDS);
+            transaction = transactionPage.poll(5, TimeUnit.SECONDS);
             if(transaction == null)
             {
                 transactionPage.truncateLog();
@@ -90,10 +92,30 @@ public class Mk_TransactionWorker extends TransactionWorker
                 processSnapshotTransaction(entity, entityId, expPageId, transaction);
                     
             
-        } catch (IOException | InterruptedException ex)
+        } catch (IOException ex)
         {
             LOGGER.log(Level.INFO, null, ex);
-        } catch (EventStoreException ex)
+        } catch(NoPageFoundException ex)
+        {
+            if(!run.get())
+                LOGGER.log(Level.INFO, "Transaction was unable to be processed "
+                        + "while worker is shutting down. The transaction will "
+                        + "be processed when started again.", ex);
+            else 
+            {
+                LOGGER.log(Level.SEVERE, String.format("Unable to find "
+                        + "associated page for transaction -> %s", transaction),
+                        ex);
+                Thread.currentThread().interrupt();
+            }
+        }
+        catch(InterruptedException ex)
+        {
+            LOGGER.log(Level.SEVERE, "Interruption exception thrown while "
+                    + "waiting for the next transaction.", ex);
+            Thread.currentThread().interrupt();
+        }
+        catch (EventStoreException ex)
         {
             Logger.getLogger(TransactionWorker.class.getName()).log(Level.SEVERE, null, ex);
         } 
