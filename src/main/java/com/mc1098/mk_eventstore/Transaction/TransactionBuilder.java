@@ -19,7 +19,6 @@ package com.mc1098.mk_eventstore.Transaction;
 import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Event.Event;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
-import com.mc1098.mk_eventstore.Exception.SerializationException;
 import com.mc1098.mk_eventstore.Util.EventStoreUtils;
 import java.util.ArrayList;
 import java.util.List;
