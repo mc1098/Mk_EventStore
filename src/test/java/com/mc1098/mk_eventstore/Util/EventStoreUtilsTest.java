@@ -70,12 +70,31 @@ public class EventStoreUtilsTest
     }
     
     @Test (expected = SerializationException.class)
-    public void testDeserialisation_Exception() throws SerializationException
+    public void testSerialisation_Exception() throws SerializationException
     {
         System.out.println("serialisation_Exception");
+        
+        EventStoreUtils.serialise(new NonSerializableObject());
+    }
+    
+    @Test (expected = SerializationException.class)
+    public void testDeserialisation_Exception() throws SerializationException
+    {
+        System.out.println("deserialisation_Exception");
         
         EventStoreUtils.deserialise(new byte[]{-12, 32,23});
         
     }
     
+}
+
+
+class NonSerializableObject implements Serializable
+{
+    private final Object obj;
+    
+    public NonSerializableObject()
+    {
+        this.obj = new Object();
+    }
 }
