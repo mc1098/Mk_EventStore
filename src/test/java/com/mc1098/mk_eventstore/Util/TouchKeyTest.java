@@ -139,6 +139,7 @@ public class TouchKeyTest
         
         assertEquals(key, keyCopy);
         assertNotEquals(TOUCH_KEY, key);
+        assertNotEquals(key, new Object());
     }
     
     

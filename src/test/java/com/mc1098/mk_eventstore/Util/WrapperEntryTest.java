@@ -73,6 +73,7 @@ public class WrapperEntryTest
         
         assertEquals("Expect the same value to be equal.", we1, we1);
         assertNotEquals("Expect these two Entry objects to not be equal.", we1, we2);
+        assertNotEquals(we1, new Object());
         assertEquals("Expected toString to mirror Map.Entry#toString", "key1=value1", we1.toString());
         
         we2.setValue("value34");

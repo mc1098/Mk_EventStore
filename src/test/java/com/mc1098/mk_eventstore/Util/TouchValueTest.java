@@ -106,6 +106,7 @@ public class TouchValueTest
         //expect equal irrespective of what key.
         assertEquals(value, valueCopy);
         assertNotEquals(value2, value);
+        assertNotEquals(value, new Object());
     }
     
     
