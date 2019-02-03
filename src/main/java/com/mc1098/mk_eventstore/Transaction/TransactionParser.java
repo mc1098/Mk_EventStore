@@ -29,36 +29,4 @@ public interface TransactionParser
     public Transaction parse(ByteBuffer buffer) throws ParseException;
     public byte[] toBytes(Transaction transaction);
     
-    
-    
-//    public Transaction parse(ByteBuffer buffer)
-//    {
-//        TransactionType type = TransactionType.values()[buffer.get()];
-//        long pageId = buffer.getLong();
-//        long entity = buffer.getLong();
-//        long entityId = buffer.getLong();
-//        long version = buffer.getLong();
-//        int dataSize = buffer.getInt();
-//        byte[] data = new byte[dataSize];
-//        buffer.get(data);
-//        
-//        return new Transaction(type, pageId, entity, entityId, version, data);
-//    }
-//    
-//    public byte[] toBytes(Transaction transaction)
-//    {
-//        int size = Byte.BYTES + (Long.BYTES * 4) + Integer.BYTES + transaction.getData().length;
-//        
-//        byte[] bytes = new byte[size];
-//        ByteBuffer buffer = ByteBuffer.wrap(bytes);
-//        buffer.rewind();
-//        buffer.put((byte)transaction.getType().ordinal());
-//        buffer.putLong(transaction.getPageId());
-//        buffer.putLong(transaction.getEntity());
-//        buffer.putLong(transaction.getEntityId());
-//        buffer.putLong(transaction.getVersion());
-//        buffer.putInt(transaction.getData().length);
-//        buffer.put(transaction.getData());
-//        return buffer.array();
-//    }
 }
