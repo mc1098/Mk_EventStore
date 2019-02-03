@@ -24,7 +24,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -150,6 +152,28 @@ public class Mk_TransactionPage implements TransactionPage
     {
         transactions.addAll(pending);
         pending.clear();
+    }
+    
+    @Override
+    public boolean equals(Object o)
+    {
+        if(!(o instanceof Mk_TransactionPage))
+            return false;
+        
+        Mk_TransactionPage tp = (Mk_TransactionPage)o;
+        
+        //blockingQueue#equals was return false despite both queues containing same 
+        return (Arrays.equals(transactions.toArray(), tp.transactions.toArray()) &&
+                this.file.getPath().equals(tp.file.getPath()));
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int hash = 3;
+        hash = 13 * hash + Objects.hashCode(this.transactions);
+        hash = 13 * hash + Objects.hashCode(this.file);
+        return hash;
     }
     
 }
