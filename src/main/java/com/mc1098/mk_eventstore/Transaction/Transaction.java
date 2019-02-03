@@ -16,6 +16,9 @@
  */
 package com.mc1098.mk_eventstore.Transaction;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 
 /**
  *
@@ -23,28 +26,6 @@ package com.mc1098.mk_eventstore.Transaction;
  */
 public class Transaction
 {
-    /*
-    Events:
-    size type entity entityId version data      
-    0x14     0x01 0x01   0x01     0x00    0x0080 0x842 0x8421 
-    Snapshot:
-    size type entity entityId version data
-    0x14 0x02 0x01   0x01    0x00    0x0x00842182
-    */
-    
-//    public static Transaction fromBuffer(ByteBuffer buffer)
-//    {
-//        int size = buffer.getInt();
-//        TransactionType type = TransactionType.values()[buffer.get()];
-//        long entity = buffer.getLong();
-//        long entityId = buffer.getLong();
-//        long version = buffer.getLong();
-//        byte[] data = new byte[size - (Byte.BYTES + (Long.BYTES * 3))];
-//        buffer.get(data);
-//        
-//        return new Transaction(type, entity, entityId, version, data);
-//    }
-    
     private final TransactionType type;
     private final long pageId;
     private final long entity;
@@ -74,6 +55,35 @@ public class Transaction
     public long getVersion() {return version;}
 
     public byte[] getData() {return data;}
+    
+    @Override
+    public boolean equals(Object o)
+    {
+        if(!(o instanceof Transaction))
+            return false;
+        
+        Transaction t = (Transaction) o;
+        
+        return (this.type.equals(t.type) && 
+                this.pageId == t.pageId &&
+                this.entity == t.entity && 
+                this.entityId == t.entityId && 
+                this.version == t.version && 
+                Arrays.equals(this.data, t.data));
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int hash = 3;
+        hash = 71 * hash + Objects.hashCode(this.type);
+        hash = 71 * hash + (int) (this.pageId ^ (this.pageId >>> 32));
+        hash = 71 * hash + (int) (this.entity ^ (this.entity >>> 32));
+        hash = 71 * hash + (int) (this.entityId ^ (this.entityId >>> 32));
+        hash = 71 * hash + (int) (this.version ^ (this.version >>> 32));
+        hash = 71 * hash + Arrays.hashCode(this.data);
+        return hash;
+    }
     
 }
 
