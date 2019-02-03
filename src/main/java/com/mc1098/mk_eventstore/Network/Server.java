@@ -25,17 +25,24 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author Max Cripps <43726912+mc1098@users.noreply.github.com>
  */
-public abstract class Server implements Runnable
+public abstract class Server implements Runnable, AutoCloseable
 {
+    public static final Logger LOGGER = Logger.getLogger(Server.class.getName());
+    
+    private final AtomicBoolean run;
     private Exception exception;
     
     public Server()
     {
+        this.run = new AtomicBoolean(true);
         this.exception = null;
     }
     
@@ -44,21 +51,19 @@ public abstract class Server implements Runnable
     @Override
     public void run()
     {
-        
-        try
+        InetSocketAddress isa = new InetSocketAddress(6543);
+        try(Selector selector = Selector.open();
+                ServerSocketChannel ssc = ServerSocketChannel.open())
         {
-            InetSocketAddress isa = new InetSocketAddress(6543);
-            Selector selector = Selector.open();
-            ServerSocketChannel ssc = ServerSocketChannel.open();
             ssc.configureBlocking(false);
             ssc.socket().bind(isa);
             ssc.register(selector, SelectionKey.OP_ACCEPT);
-            
-            while(true)
+
+            while(run.get())
             {
                 if(selector.select() <= 0)
                     continue;
-                
+
                 Set<SelectionKey> readySet = selector.keys();
                 Iterator<SelectionKey> itr = readySet.iterator();
                 while(itr.hasNext())
@@ -73,22 +78,9 @@ public abstract class Server implements Runnable
                         innerSc.register(key.selector(), SelectionKey.OP_READ);
                     }
                     if(key.isReadable())
-                    {
                         processRead(key);
-                        
-//                        try
-//                        {
-////                            T read = read(key);
-//                            process(key, read);
-//                        } catch(ServerReadException ex)
-//                        {
-//                            writeMessage(key, ex.getMessage());
-//                        }
-                    }
                 }
             }
-            
-            
             
         }catch(IOException ex)
         {
@@ -109,19 +101,15 @@ public abstract class Server implements Runnable
             sc.write(buffer);
         } catch(IOException ex)
         {
-            //error logging
+            LOGGER.log(Level.SEVERE, "Failure to write bytes to client", ex);
         }
         
     }
     
-//    protected abstract T read(SelectionKey key) throws ServerReadException;
-//    
-//    protected abstract void process(SelectionKey key, T serializable);
-//
-//    protected abstract void writeMessage(SelectionKey key, String reply);
-//    
-//    protected abstract void write(SelectionKey key, T2 reply);
-    
-    
+    @Override
+    public void close()
+    {
+        run.set(false);
+    }
     
 }
