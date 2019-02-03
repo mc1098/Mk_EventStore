@@ -29,6 +29,8 @@ import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -36,6 +38,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class Mk_TransactionPage implements TransactionPage
 {
+    
+    private static final Logger LOGGER = Logger.getLogger(Mk_TransactionPage.class.getName());
     
     public static TransactionPage parse(File file, ByteBuffer buffer, 
             TransactionParser transactionParser) throws ParseException
@@ -126,7 +130,9 @@ public class Mk_TransactionPage implements TransactionPage
     public void confirmTransactionProcessed(Transaction transaction)
     {
         if(transactions.contains(transaction))
-            transactions.remove();
+            if(!transactions.remove(transaction))
+                LOGGER.log(Level.INFO, "Removal of transaction failed when "
+                        + "confirming it was processed.");
     }
     
     @Override
