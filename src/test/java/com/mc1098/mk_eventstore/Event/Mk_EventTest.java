@@ -112,11 +112,11 @@ public class Mk_EventTest
     {
         System.out.println("getOccurred");
         
-        LocalDateTime before = LocalDateTime.now();
+        LocalDateTime before = LocalDateTime.now().minusSeconds(10);
         Mk_Event instance = new Mk_Event("testEvent", "testEntity", 1, 0, 
                 LocalDateTime.now(), new HashMap<>());
         LocalDateTime result = instance.getOccurred();
-        LocalDateTime after = LocalDateTime.now().plusSeconds(1);
+        LocalDateTime after = LocalDateTime.now().plusSeconds(10);
         assertTrue(before.isBefore(result));
         assertTrue(after.isAfter(result));
     }
