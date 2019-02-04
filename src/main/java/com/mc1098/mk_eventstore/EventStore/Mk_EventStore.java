@@ -101,7 +101,7 @@ public class Mk_EventStore implements EventStore
     }
     
     public static EventStore create(PageDirectory directory, 
-            TransactionPage transactionPage) throws IOException
+            TransactionPage transactionPage) throws EventStoreException, IOException
     {
         EntityPageParser parser = directory.getEntityPageParser();
         TransactionWorker tw = new Mk_TransactionWorker(transactionPage, directory, parser);

@@ -65,13 +65,22 @@ public class Mk_TransactionWorker extends TransactionWorker
     public void run()
     {
         while (run.get())
-        {            
-            processTransactions();
+        {
+            try 
+            {
+                processTransactions();
+            } catch(EventStoreException ex)
+            {
+                LOGGER.log(Level.SEVERE, "Unrecoverable or possibly data "
+                        + "corrupting error has occurred.", ex);
+                getDefaultUncaughtExceptionHandler().uncaughtException(this, ex);
+                break;
+            }
         }
             
     }
     
-    private void processTransactions()
+    private void processTransactions() throws EventStoreException
     {
         Transaction transaction = null;
         try
@@ -116,10 +125,6 @@ public class Mk_TransactionWorker extends TransactionWorker
                     + "waiting for the next transaction.", ex);
             Thread.currentThread().interrupt();
         }
-        catch (EventStoreException ex)
-        {
-            Logger.getLogger(TransactionWorker.class.getName()).log(Level.SEVERE, null, ex);
-        } 
     }
 
     private void processSnapshotTransaction(long entity, long entityId, 
@@ -201,11 +206,17 @@ public class Mk_TransactionWorker extends TransactionWorker
     }
     
     @Override
-    public void flush() throws IOException
+    public void flush() throws EventStoreException
     {
-        while(transactionPage.hasTransaction())
-            processTransactions();
-        transactionPage.truncateLog();
+        try 
+        {
+            while(transactionPage.hasTransaction())
+                processTransactions();
+            transactionPage.truncateLog();
+        } catch(IOException ex)
+        {
+            throw new EventStoreException(ex);
+        }
     }
     
     @Override

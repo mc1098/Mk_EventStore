@@ -16,7 +16,7 @@
  */
 package com.mc1098.mk_eventstore.Transaction;
 
-import java.io.IOException;
+import com.mc1098.mk_eventstore.Exception.EventStoreException;
 
 /**
  *
@@ -26,7 +26,7 @@ public abstract class TransactionWorker extends Thread
 {
     @Override
     public abstract void run();
-    public abstract void flush() throws IOException;
+    public abstract void flush() throws EventStoreException;
     public abstract void stopAfterTransaction() throws InterruptedException;
     
 }
