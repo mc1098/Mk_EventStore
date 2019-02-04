@@ -102,7 +102,7 @@ public class Mk_EntityPage implements EntityPage
     public int getEventPageRatio() {return eventPageRatio;}
 
     @Override
-    public int events() {return eventPageRatio;}
+    public int events() {return events.size();}
     
     @Override
     public void addToPending(Event... events) throws AlreadyPendingChange
@@ -132,7 +132,8 @@ public class Mk_EntityPage implements EntityPage
         
         Mk_EntityPage ep = (Mk_EntityPage) o;
         
-        return (this.entity == ep.entity && 
+        return (this.pageId == ep.pageId &&
+                this.entity == ep.entity && 
                 this.entityId == ep.entityId && 
                 this.version == ep.version && 
                 this.eventPageRatio == ep.eventPageRatio && 
