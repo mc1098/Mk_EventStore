@@ -30,6 +30,7 @@ import com.mc1098.mk_eventstore.Page.Mk_EntityPage;
 import com.mc1098.mk_eventstore.Page.Mk_EntityPageParser;
 import com.mc1098.mk_eventstore.Page.PageDirectory;
 import com.mc1098.mk_eventstore.Util.EventStoreUtils;
+import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -41,6 +42,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 import org.w3c.dom.events.EventException;
 
 /**
@@ -72,6 +75,24 @@ public class Mk_TransactionWorkerTest
     @After
     public void tearDown()
     {
+    }
+    
+    @Test
+    public void testProcessNullTransaction() throws Exception
+    {
+        System.out.println("processNullTransaction");
+        
+        Transaction transaction = null;
+        
+        DummyTransactionPage dtp = new DummyTransactionPage(transaction);
+        DummyPageDirectory dpd = null;
+        Mk_TransactionWorker instance = new Mk_TransactionWorker(dtp, dpd, null);
+        instance.flush();
+        
+        assertTrue("Expect truncate log to be called when null transaction is "
+                + "returned, which is only expected when the queue is empty.", 
+                dtp.wasTruncateUsed);
+        
     }
 
     @Test
@@ -142,40 +163,6 @@ public class Mk_TransactionWorkerTest
         
     }
     
-    //@Test
-    public void testProcessEventTransaction() throws Exception
-    {
-        System.out.println("processEventTransaction");
-        
-        Event e = new Mk_Event("testEvent", "testEntity", 1, 0, 
-                LocalDateTime.now(), new HashMap());
-        Transaction transaction = new Transaction(TransactionType.PUT_EVENT, 
-                0, 0, 1, 0, EventStoreUtils.serialise(e));
-        
-        EntityPage page = new Mk_EntityPage(0, 0, 1, 10, 
-                new Mk_Snapshot("testEntity", 1, 0, new byte[]{10}));
-        page.setCleanVersion(0);
-        
-        DummyTransactionPage dtp = new DummyTransactionPage(transaction);
-        DummyPageDirectory dpd = new DummyPageDirectory();
-        dpd.page = page;
-        EventFormat ef = new SimpleEventFormat();
-        EntityPageParser parser = new Mk_EntityPageParser(dpd, ef);
-        
-        Mk_TransactionWorker instance = new Mk_TransactionWorker(dtp, dpd, parser);
-        instance.flush();
-        
-        assertEquals(transaction, dtp.transaction);
-        assertTrue(dtp.wasTransactionConfirmedProcessed);
-        assertNotNull(dpd.page);
-        assertEquals(0, dpd.page.getPageId());
-        assertEquals(0, dpd.page.getEntity());
-        assertEquals(1, dpd.page.getEntityId());
-        assertEquals(0, dpd.page.getVersion());
-        assertEquals(true, dpd.wasPageConfirmed);
-        
-    }
-    
     @Test(expected = EventStoreException.class)
     public void testProcessMalformedEventTransaction_Exception() throws Exception
     {
@@ -197,15 +184,17 @@ public class Mk_TransactionWorkerTest
         instance.flush();
         
     }
+    
+    
+    
 
-    //@Test
+    @Test
     public void testStopAfterTransaction() throws Exception
     {
         System.out.println("stopAfterTransaction");
-        Mk_TransactionWorker instance = null;
+        Mk_TransactionWorker instance = new Mk_TransactionWorker(null, null, null);
         instance.stopAfterTransaction();
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        assertTrue(instance.isShuttingDown());
     }
     
     class DummyTransactionPage implements TransactionPage
@@ -213,6 +202,7 @@ public class Mk_TransactionWorkerTest
         int transactions = 1;
         public Transaction transaction;
         public boolean wasTransactionConfirmedProcessed;
+        private boolean wasTruncateUsed;
         
         public DummyTransactionPage(Transaction transaction)
         {
@@ -258,6 +248,7 @@ public class Mk_TransactionWorkerTest
         @Override
         public void truncateLog() throws IOException
         {
+            this.wasTruncateUsed = true;
             //ignore
         }
 

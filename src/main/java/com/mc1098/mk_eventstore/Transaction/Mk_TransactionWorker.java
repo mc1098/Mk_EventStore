@@ -60,6 +60,9 @@ public class Mk_TransactionWorker extends TransactionWorker
         this.run = new AtomicBoolean(true);
         this.setName("Transaction Worker Thread");
     }
+    
+    @Override
+    public boolean isShuttingDown() {return !run.get();}
 
     @Override
     public void run()
@@ -96,15 +99,25 @@ public class Mk_TransactionWorker extends TransactionWorker
             long entityId = transaction.getEntityId();
             long expPageId = transaction.getVersion() / directory.getEPR(transaction.getEntity());
             
-            if(transaction.getType() == TransactionType.PUT_EVENT)
-                processEventTransaction(entity, entityId, expPageId, transaction);
-            else if(transaction.getType() == TransactionType.PUT_SNAPSHOT)
-                processSnapshotTransaction(entity, entityId, expPageId, transaction);
-                    
+            
+            switch(transaction.getType())
+            {
+                case PUT_EVENT: 
+                    processEventTransaction(entity, entityId, expPageId, transaction);
+                    break;
+                case PUT_SNAPSHOT:
+                    processSnapshotTransaction(entity, entityId, expPageId, transaction);
+                    break;
+                default:
+                    throw new AssertionError(String.format("%s TransactionType "
+                            + "is not supported by this TransactionWorker",
+                            transaction.getType().name()));
+            }     
             
         } catch (IOException ex)
         {
-            LOGGER.log(Level.INFO, null, ex);
+            LOGGER.log(Level.INFO, "Transaction worker was unable to truncate "
+                    + "the transaction log.", ex);
         } catch(NoPageFoundException ex)
         {
             if(!run.get())

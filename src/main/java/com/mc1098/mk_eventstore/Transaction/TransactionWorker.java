@@ -24,6 +24,7 @@ import com.mc1098.mk_eventstore.Exception.EventStoreException;
  */
 public abstract class TransactionWorker extends Thread
 {
+    public abstract boolean isShuttingDown();
     @Override
     public abstract void run();
     public abstract void flush() throws EventStoreException;
