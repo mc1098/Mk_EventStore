@@ -96,6 +96,7 @@ public class Mk_Event implements Event
                 this.targetEntityName.equals(e.targetEntityName) && 
                 this.targetEntityId == e.targetEntityId && 
                 this.occurred.equals(e.occurred) &&
+                this.version == e.version &&
                 this.map.equals(e.map));
     }
 
