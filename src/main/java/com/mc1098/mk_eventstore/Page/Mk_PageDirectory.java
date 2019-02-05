@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  *
@@ -344,6 +345,34 @@ public class Mk_PageDirectory implements PageDirectory
     {
         if(parser != null)
             this.entityPageParser = parser;
+    }
+    
+    @Override
+    public boolean equals(Object o)
+    {
+        if(!(o instanceof Mk_PageDirectory))
+            return false;
+        
+        Mk_PageDirectory pd = (Mk_PageDirectory) o;
+        
+        return (this.entityPages.equals(pd.entityPages) && 
+                this.entityNames.equals(pd.entityNames) && 
+                this.entityERP.equals(pd.entityERP) && 
+                this.pending.equals(pd.pending) &&
+                this.transactionPage.equals(pd.transactionPage));
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int hash = 3;
+        hash = 97 * hash + Objects.hashCode(this.entityPages);
+        hash = 97 * hash + Objects.hashCode(this.entityPageParser);
+        hash = 97 * hash + Objects.hashCode(this.entityNames);
+        hash = 97 * hash + Objects.hashCode(this.entityERP);
+        hash = 97 * hash + Objects.hashCode(this.pending);
+        hash = 97 * hash + Objects.hashCode(this.transactionPage);
+        return hash;
     }
     
 }

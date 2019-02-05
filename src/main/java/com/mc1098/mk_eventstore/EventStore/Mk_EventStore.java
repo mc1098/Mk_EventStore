@@ -46,6 +46,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -116,7 +117,7 @@ public class Mk_EventStore implements EventStore
     private final TransactionPage transactionPage;
     private final TransactionWorker transactionWorker;
     
-    private Mk_EventStore(PageDirectory directory, 
+    protected Mk_EventStore(PageDirectory directory, 
             TransactionPage transactionPage, TransactionWorker transactionWorker)
     {
         this.directory = directory;
@@ -401,6 +402,28 @@ public class Mk_EventStore implements EventStore
     {
         transactionWorker.stopAfterTransaction();
         transactionWorker.join();
+    }
+    
+    
+    @Override
+    public boolean equals(Object o)
+    {
+        if(!(o instanceof Mk_EventStore))
+            return false;
+        
+        Mk_EventStore es = (Mk_EventStore) o;
+        
+        return (this.directory.equals(es.directory) && 
+                this.transactionPage.equals(es.transactionPage));
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int hash = 3;
+        hash = 41 * hash + Objects.hashCode(this.directory);
+        hash = 41 * hash + Objects.hashCode(this.transactionPage);
+        return hash;
     }
 
     

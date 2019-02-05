@@ -139,6 +139,24 @@ public class TouchMap<K, V> implements Map<K, V>
                 .accept(t.getKey(), t.getValue()));
     }
     
+    @Override
+    public boolean equals(Object o)
+    {
+        if(!(o instanceof TouchMap))
+            return false;
+        
+        TouchMap tm = (TouchMap) o;
+        
+        return (this.map.equals(tm.map));
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int hash = 3;
+        hash = 79 * hash + Objects.hashCode(this.map);
+        return hash;
+    }
     
     
 }
