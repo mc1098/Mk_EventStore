@@ -95,7 +95,7 @@ public class Mk_EventStoreTest
         System.out.println("create");
         
         File transactionLog = new File("Entity/TL");
-        transactionLog.mkdirs();
+        transactionLog.getParentFile().mkdirs();
         transactionLog.createNewFile();
         File enmFile = new File("Entity/ENM");
         enmFile.createNewFile();
