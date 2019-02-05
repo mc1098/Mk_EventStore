@@ -22,6 +22,7 @@ import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Event.Event;
 import com.mc1098.mk_eventstore.Event.Mk_Event;
 import com.mc1098.mk_eventstore.Event.SimpleEventFormat;
+import com.mc1098.mk_eventstore.Exception.EntityChronologicalException;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import com.mc1098.mk_eventstore.Exception.TransactionException;
 import com.mc1098.mk_eventstore.Page.EntityPage;
@@ -40,6 +41,10 @@ import com.mc1098.mk_eventstore.Transaction.TransactionType;
 import com.mc1098.mk_eventstore.Transaction.TransactionWorker;
 import java.io.File;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -85,10 +90,7 @@ public class Mk_EventStoreTest
     @AfterClass
     public static void tearDownClass()
     {
-        File file = new File("Entity");
-        for (File f : file.listFiles())
-            f.delete();
-        file.delete();
+        
     }
     
     @Before
@@ -99,6 +101,13 @@ public class Mk_EventStoreTest
     @After
     public void tearDown()
     {
+        File file = new File("Entity");
+        if(file.exists())
+        {
+            for (File f : file.listFiles())
+                f.delete();
+            file.delete();
+        }
     }
 
     @Test
@@ -140,6 +149,24 @@ public class Mk_EventStoreTest
         assertEquals(expResult, result);
         assertTrue(transactionLog.exists());
         assertTrue(enmFile.exists());
+    }
+    
+    @Test (expected = EventStoreException.class)
+    public void testCreate_TransactionFileLocked() throws Exception
+    {
+        System.out.println("create_TransactionFileLocked");
+        
+        File transactionLog = new File("Entity/TL");
+        transactionLog.getParentFile().mkdirs();
+        transactionLog.createNewFile();
+        try (FileChannel fc = FileChannel.open(transactionLog.toPath(), StandardOpenOption.WRITE); 
+                FileLock fl = fc.lock())
+        {
+            TransactionParser parser = new Mk_TransactionParser();
+            TransactionPage transactionPage = new Mk_TransactionPage(transactionLog, parser);
+            PageDirectory directory = Mk_PageDirectory.setup(new SimpleEventFormat(), transactionPage);
+            Mk_EventStore.create(directory, transactionPage);
+        }
     }
 
     @Test
@@ -267,6 +294,34 @@ public class Mk_EventStoreTest
         assertNotNull(dtp.writeTransaction);
         assertEquals(TransactionType.PUT_SNAPSHOT, dtp.writeTransaction.getType());
     }
+    
+    @Test (expected = EntityChronologicalException.class)
+    public void testSaveInvalidSnapshot() throws Exception
+    {
+        System.out.println("saveInvalidSnapshot");
+        Snapshot ss = new Mk_Snapshot("testEntity", 1, 5, new byte[]{10});
+        DummyPageDirectory dpd = new DummyPageDirectory();
+        dpd.hasEntity = true;
+        dpd.doesPageExist = false;
+        DummyTransactionPage dtp = new DummyTransactionPage();
+        Mk_EventStore instance = new Mk_EventStore(dpd, dtp, null);
+        instance.saveSnapshot(ss);
+    }
+    
+    @Test (expected = EntityChronologicalException.class)
+    public void testSaveDuplicateSnapshot() throws Exception
+    {
+        System.out.println("saveDuplicateSnapshot");
+        
+        Snapshot ss = snapshot;
+        DummyPageDirectory dpd = new DummyPageDirectory();
+        dpd.hasEntity = true;
+        dpd.doesPageExist = true;
+        DummyTransactionPage dtp = new DummyTransactionPage();
+        Mk_EventStore instance = new Mk_EventStore(dpd, dtp, null);
+        instance.saveSnapshot(ss);
+    }
+    
 
     @Test
     public void testSave_4args() throws Exception
@@ -330,6 +385,31 @@ public class Mk_EventStoreTest
         instance.close();
         assertTrue(transactionWorker.isShuttingDown());
         assertFalse(transactionWorker.isAlive());
+    }
+    
+    @Test
+    public void testEquals() throws Exception
+    {
+        System.out.println("equals");
+        
+        File transactionLog = new File("Entity/TL");
+        File entityFile = transactionLog.getParentFile();
+        entityFile.mkdirs();
+        transactionLog.createNewFile();
+        File enm = new File("Entity/ENM");
+        enm.createNewFile();
+        TransactionPage transactionPage = new Mk_TransactionPage(transactionLog, null);
+        PageDirectory directory = Mk_PageDirectory.setup(null, transactionPage);
+        
+        Mk_EventStore es = new Mk_EventStore(directory, transactionPage, null);
+        Mk_EventStore es2 = new Mk_EventStore(new DummyPageDirectory(), transactionPage, null);
+        Mk_EventStore es3 = new Mk_EventStore(directory, new DummyTransactionPage(), null);
+        
+        assertEquals(es, es); //sanity check
+        assertNotEquals(es, es2);
+        assertNotEquals(es, es3);
+        assertNotEquals(es, new Object());
+        
     }
     
     
