@@ -91,7 +91,7 @@ public class Mk_PageDirectory implements PageDirectory
     private final Map<String, EntityPage> pending;
     private final TransactionPage transactionPage;
     
-    private Mk_PageDirectory(EventFormat ef, 
+    protected Mk_PageDirectory(EventFormat ef, 
             TransactionPage transactionPage, 
             Map<String, Long> entityNames, Map<Long, Integer> entityERP)
     {
@@ -133,7 +133,7 @@ public class Mk_PageDirectory implements PageDirectory
     public int getEPR(long entity) 
     {
         if(entityERP.containsKey(entity))
-            entityERP.get(entity);
+            return entityERP.get(entity);
         return 20;
     }
     
