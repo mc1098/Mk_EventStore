@@ -17,21 +17,37 @@
 package com.mc1098.mk_eventstore.EventStore;
 
 import com.mc1098.mk_eventstore.Entity.EntityToken;
+import com.mc1098.mk_eventstore.Entity.Mk_Snapshot;
 import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Event.Event;
+import com.mc1098.mk_eventstore.Event.Mk_Event;
 import com.mc1098.mk_eventstore.Event.SimpleEventFormat;
+import com.mc1098.mk_eventstore.Exception.EventStoreException;
+import com.mc1098.mk_eventstore.Exception.TransactionException;
+import com.mc1098.mk_eventstore.Page.EntityPage;
 import com.mc1098.mk_eventstore.Page.EntityPageParser;
+import com.mc1098.mk_eventstore.Page.Mk_EntityPage;
 import com.mc1098.mk_eventstore.Page.Mk_EntityPageParser;
 import com.mc1098.mk_eventstore.Page.Mk_PageDirectory;
 import com.mc1098.mk_eventstore.Page.PageDirectory;
 import com.mc1098.mk_eventstore.Transaction.Mk_TransactionPage;
 import com.mc1098.mk_eventstore.Transaction.Mk_TransactionParser;
 import com.mc1098.mk_eventstore.Transaction.Mk_TransactionWorker;
+import com.mc1098.mk_eventstore.Transaction.Transaction;
 import com.mc1098.mk_eventstore.Transaction.TransactionPage;
 import com.mc1098.mk_eventstore.Transaction.TransactionParser;
+import com.mc1098.mk_eventstore.Transaction.TransactionType;
 import com.mc1098.mk_eventstore.Transaction.TransactionWorker;
 import java.io.File;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -46,6 +62,17 @@ import static org.junit.Assert.*;
 public class Mk_EventStoreTest
 {
     
+    Snapshot snapshot = new Mk_Snapshot("testEntity", 1, 0, new byte[]{10});
+    
+    Event event = new Mk_Event("testEvent", "testEntity", 1, 0, LocalDateTime.now(), new HashMap<>());
+    Event event2 = new Mk_Event("testEvent", "testEntity", 1, 1, LocalDateTime.now(), new HashMap<>());
+    Event event3 = new Mk_Event("testEvent", "testEntity", 1, 2, LocalDateTime.now(), new HashMap<>());
+    Event event4 = new Mk_Event("testEvent", "testEntity", 1, 3, LocalDateTime.now(), new HashMap<>());
+    Event event5 = new Mk_Event("testEvent", "testEntity", 1, 4, LocalDateTime.now(), new HashMap<>());
+    
+    EntityPage page = new Mk_EntityPage(0, 0, 1, 3, 10, snapshot, 
+                    new ArrayDeque<Event>(){{add(event); add(event2); add(event3);}});
+    
     public Mk_EventStoreTest()
     {
     }
@@ -58,6 +85,10 @@ public class Mk_EventStoreTest
     @AfterClass
     public static void tearDownClass()
     {
+        File file = new File("Entity");
+        for (File f : file.listFiles())
+            f.delete();
+        file.delete();
     }
     
     @Before
@@ -111,152 +142,350 @@ public class Mk_EventStoreTest
         assertTrue(enmFile.exists());
     }
 
-    //@Test
-    public void testGetERP()
-    {
-        System.out.println("getERP");
-        String entityName = "";
-        Mk_EventStore instance = null;
-        int expResult = 0;
-        int result = instance.getERP(entityName);
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    //@Test
+    @Test
     public void testGetById_String_long() throws Exception
     {
-        System.out.println("getById");
-        String entityName = "";
-        long id = 0L;
-        Mk_EventStore instance = null;
-        EntityToken expResult = null;
+        System.out.println("getById_latest");
+        String entityName = "testEntity";
+        long id = 1L;
+        DummyPageDirectory dpd = new DummyPageDirectory();
+        Mk_EventStore instance = new Mk_EventStore(dpd, null, null);
+        EntityToken expResult = new EntityToken(new Mk_Snapshot("testEntity", id,
+                0, new byte[]{10}), new Event[]{event, event2, event3});
         EntityToken result = instance.getById(entityName, id);
+        
         assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        assertTrue(dpd.wasGetEntityUsed);
+        assertTrue(dpd.wasGetEntityPageUsed);
     }
 
-    //@Test
+    @Test
     public void testGetById_3args() throws Exception
     {
-        System.out.println("getById");
-        String entityName = "";
-        long id = 0L;
-        long version = 0L;
-        Mk_EventStore instance = null;
-        EntityToken expResult = null;
+        System.out.println("getByIdAndVersion");
+        String entityName = "testEntity";
+        long id = 1L;
+        long version = 1L;
+        DummyPageDirectory dpd = new DummyPageDirectory();
+        Mk_EventStore instance = new Mk_EventStore(dpd, null, null);
+        EntityToken expResult = new EntityToken(new Mk_Snapshot(entityName, id, 
+                0, new byte[]{10}), new Event[]{event});
+        
         EntityToken result = instance.getById(entityName, id, version);
         assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        assertTrue(dpd.wasGetEPRUsed);
+        assertTrue(dpd.wasGetEntityPageUsed);
+        assertTrue(dpd.wasGetEntityUsed);
     }
     
-    //@Test
+    @Test
     public void testGetEventsById_3args() throws Exception
     {
         System.out.println("getEventsById");
-        String entityName = "";
-        long id = 0L;
+        String entityName = "testEntity";
+        long id = 1L;
         long fromVer = 0L;
-        Mk_EventStore instance = null;
-        Queue<Event> expResult = null;
+        DummyPageDirectory dpd = new DummyPageDirectory();
+        Mk_EventStore instance = new Mk_EventStore(dpd, null, null);
+        Queue<Event> expResult = new ArrayDeque<Event>(){{add(event); add(event2); add(event3);}};
         Queue<Event> result = instance.getEventsById(entityName, id, fromVer);
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        
+        assertArrayEquals(expResult.toArray(), result.toArray());
+        assertTrue(dpd.wasGetEPRUsed);
+        assertTrue(dpd.wasGetEntityPageUsed);
+        assertTrue(dpd.wasGetEntityUsed);
     }
 
-    //@Test
+    @Test
     public void testGetEventsById_4args() throws Exception
     {
         System.out.println("getEventsById");
-        String entityName = "";
-        long id = 0L;
+        String entityName = "testEntity";
+        long id = 1L;
         long fromVer = 0L;
-        long toVer = 0L;
-        Mk_EventStore instance = null;
-        Queue<Event> expResult = null;
+        long toVer = 2L;
+        DummyPageDirectory dpd = new DummyPageDirectory();
+        Mk_EventStore instance = new Mk_EventStore(dpd, null, null);
+        Queue<Event> expResult = new ArrayDeque<Event>(){{add(event); add(event2);}};
         Queue<Event> result = instance.getEventsById(entityName, id, fromVer, toVer);
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        
+        assertArrayEquals(expResult.toArray(), result.toArray());
+        assertTrue(dpd.wasGetEPRUsed);
+        assertTrue(dpd.wasGetEntityPageUsed);
+        assertTrue(dpd.wasGetEntityUsed);
     }
 
-    //@Test
+    @Test
     public void testGetSnapshot_String_long() throws Exception
     {
         System.out.println("getSnapshot");
-        String entityName = "";
-        long id = 0L;
-        Mk_EventStore instance = null;
-        Snapshot expResult = null;
+        String entityName = "testEntity";
+        long id = 1L;
+        DummyPageDirectory dpd = new DummyPageDirectory();
+        Mk_EventStore instance = new Mk_EventStore(dpd, null, null);
+        Snapshot expResult = snapshot;
         Snapshot result = instance.getSnapshot(entityName, id);
         assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        assertTrue(dpd.wasGetEntityPageUsed);
+        assertTrue(dpd.wasGetEntityUsed);
     }
 
-    //@Test
+    @Test
     public void testGetSnapshot_3args() throws Exception
     {
         System.out.println("getSnapshot");
-        String entityName = "";
-        long id = 0L;
+        String entityName = "testEntity";
+        long id = 1L;
         long lteq = 0L;
-        Mk_EventStore instance = null;
-        Snapshot expResult = null;
+        DummyPageDirectory dpd = new DummyPageDirectory();
+        Mk_EventStore instance = new Mk_EventStore(dpd, null, null);
+        Snapshot expResult = snapshot;
         Snapshot result = instance.getSnapshot(entityName, id, lteq);
         assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        assertTrue(dpd.wasGetEPRUsed);
+        assertTrue(dpd.wasGetEntityPageUsed);
+        assertTrue(dpd.wasGetEntityUsed);
     }
 
-    //@Test
+    @Test
     public void testSaveSnapshot() throws Exception
     {
         System.out.println("saveSnapshot");
-        Snapshot ss = null;
-        Mk_EventStore instance = null;
+        Snapshot ss = snapshot;
+        DummyPageDirectory dpd = new DummyPageDirectory();
+        dpd.hasEntity = true;
+        dpd.doesPageExist = false;
+        DummyTransactionPage dtp = new DummyTransactionPage();
+        Mk_EventStore instance = new Mk_EventStore(dpd, dtp, null);
         instance.saveSnapshot(ss);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        assertEquals(ss, dpd.createdPage.getSnapshot());
+        assertTrue(dpd.wasGetEPRUsed);
+        assertTrue(dpd.wasGetEntityUsed);
+        assertTrue(dpd.wasCreatePendingUsed);
+        assertTrue(dpd.wasConfirmPendingUsed);
+        assertTrue(dtp.wasRefreshUsed);
+        assertNotNull(dtp.writeTransaction);
+        assertEquals(TransactionType.PUT_SNAPSHOT, dtp.writeTransaction.getType());
     }
 
-    //@Test
+    @Test
     public void testSave_4args() throws Exception
     {
         System.out.println("save");
-        String entityName = "";
-        long id = 0L;
-        long loadedVersion = 0L;
-        Event[] events = null;
-        Mk_EventStore instance = null;
+        String entityName = "testEntity";
+        long id = 1L;
+        long loadedVersion = 3L;
+        Event[] events = new Event[]{event4, event5};
+        DummyPageDirectory dpd = new DummyPageDirectory();
+        DummyTransactionPage dtp = new DummyTransactionPage();
+        Mk_EventStore instance = new Mk_EventStore(dpd, dtp, null);
         instance.save(entityName, id, loadedVersion, events);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        Queue<Event> pageEvents = new ArrayDeque<>(Arrays.asList(page.getEvents()));
+        
+        assertTrue(pageEvents.contains(events[0]));
+        assertTrue(pageEvents.contains(events[1]));
+        assertTrue(dpd.wasGetEntityUsed);
+        assertNotNull(dtp.writeTransactions);
+        assertTrue(dtp.writeTransactions.stream()
+                .allMatch((t)->t.getType().equals(TransactionType.PUT_EVENT)));
+        
+        
     }
 
-    //@Test
+    @Test
     public void testSave_EntityToken() throws Exception
     {
         System.out.println("save");
-        EntityToken token = null;
-        Mk_EventStore instance = null;
+        
+        Event[] events = new Event[] {event4, event5};
+        EntityToken token = new EntityToken(snapshot, events);
+        
+        DummyPageDirectory dpd = new DummyPageDirectory();
+        DummyTransactionPage dtp = new DummyTransactionPage();
+        Mk_EventStore instance = new Mk_EventStore(dpd, dtp, null);
         instance.save(token);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        Queue<Event> pageEvents = new ArrayDeque<>(Arrays.asList(dpd.createdPage.getEvents()));
+        assertTrue(pageEvents.contains(events[0]));
+        assertTrue(pageEvents.contains(events[1]));
+        assertEquals(snapshot, dpd.createdPage.getSnapshot());
+        assertTrue(dpd.wasGetEPRUsed);
+        assertTrue(dpd.wasGetEntityUsed);
+        assertTrue(dpd.wasCreatePendingUsed);
+        assertTrue(dpd.wasConfirmPendingUsed);
+        assertTrue(dtp.wasRefreshUsed);
+        assertEquals(TransactionType.PUT_SNAPSHOT, dtp.writeTransactions.get(0).getType());
+        assertEquals(TransactionType.PUT_EVENT, dtp.writeTransactions.get(1).getType());
+        assertEquals(TransactionType.PUT_EVENT, dtp.writeTransactions.get(2).getType());
     }
 
-    //@Test
+    @Test
     public void testClose() throws Exception
     {
         System.out.println("close");
-        Mk_EventStore instance = null;
+        
+        TransactionWorker transactionWorker = new Mk_TransactionWorker(new DummyTransactionPage(), 
+                        new DummyPageDirectory(), null);
+        Mk_EventStore instance = new Mk_EventStore(null, null, transactionWorker);
+        transactionWorker.start();
         instance.close();
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        assertTrue(transactionWorker.isShuttingDown());
+        assertFalse(transactionWorker.isAlive());
+    }
+    
+    
+    class DummyPageDirectory implements PageDirectory
+    {
+        public boolean wasGetEntityUsed;
+        public boolean wasGetEntityNameUsed;
+        public boolean wasGetEntityPageUsed;
+        public boolean wasGetEPRUsed;
+        public boolean hasEntity;
+        public boolean wasCreatePendingUsed;
+        public boolean wasConfirmPendingUsed;
+        public EntityPage createdPage;
+        public boolean doesPageExist;
+
+        @Override
+        public String getEntityName(long entity)
+        {
+            wasGetEntityNameUsed = true;
+            return "testEntity";
+        }
+
+        @Override
+        public long getEntity(String entityName)
+        {
+            wasGetEntityUsed = true;
+            return 0;
+        }
+
+        @Override
+        public boolean hasEntity(String entityName)
+        {
+            return hasEntity;
+        }
+
+        @Override
+        public int getEPR(long entity)
+        {
+            wasGetEPRUsed = true;
+            return 10;
+        }
+
+        @Override
+        public boolean doesPageExist(long entity, long entityId, long pageNo)
+        {
+            return doesPageExist;
+        }
+
+        @Override
+        public EntityPage getEntityPage(long entity, long id) throws EventStoreException
+        {
+            wasGetEntityPageUsed = true;
+            return page;
+        }
+
+        @Override
+        public EntityPage getEntityPage(long entity, long id, long pageNo) throws EventStoreException
+        {
+            wasGetEntityPageUsed = true;
+            return page;
+        }
+
+        @Override
+        public List<EntityPage> getEntityPages(long entity, long id, long pageFrom) throws EventStoreException
+        {
+            return new ArrayList<EntityPage>(){{add(getEntityPage(entity, id, pageFrom));}};
+        }
+
+        @Override
+        public List<EntityPage> getEntityPages(long entity, long id, long pageNo, long pageNo1) throws EventStoreException
+        {
+            return getEntityPages(entity, id, pageNo);
+        }
+
+        @Override
+        public EntityPage createPendingEntityPage(long entity, long id, long pageNo, Snapshot snapshot)
+        {
+            wasCreatePendingUsed = true;
+            createdPage = new Mk_EntityPage(0, entity, id, 10, snapshot);
+            return createdPage;
+        }
+
+        @Override
+        public EntityPage confirmPendingPage(EntityPage page) throws EventStoreException
+        {
+            wasConfirmPendingUsed = true;
+            return page;
+        }
+
+        @Override
+        public TransactionPage getTransactionPage()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public EntityPageParser getEntityPageParser()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void setEntityPageParser(EntityPageParser parser)
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+        
+    }
+    
+    class DummyTransactionPage implements TransactionPage
+    {
+        
+        public Transaction writeTransaction;
+        public List<Transaction> writeTransactions;
+        public boolean wasRefreshUsed;
+
+        @Override
+        public void writeTransaction(Transaction transaction) throws TransactionException
+        {
+            writeTransaction = transaction;
+        }
+
+        @Override
+        public void writeTransaction(List<Transaction> transactions) throws TransactionException
+        {
+            writeTransactions = transactions;
+        }
+
+        @Override
+        public boolean hasTransaction()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public Transaction poll(long l, TimeUnit tu) throws InterruptedException
+        {
+            return null;
+        }
+
+        @Override
+        public void confirmTransactionProcessed(Transaction transaction)
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void truncateLog() throws IOException
+        {}
+
+        @Override
+        public void refresh()
+        {
+            wasRefreshUsed = true;
+        }
+        
     }
     
 }

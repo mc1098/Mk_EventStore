@@ -194,7 +194,7 @@ public class Mk_EventStore implements EventStore
             for (Event event : page.getEvents())
             {
                 version+=1;
-                if(version > fromVer && version < toVer)
+                if(version > fromVer && version <= toVer)
                     events.add(event);
             }
         
@@ -253,7 +253,12 @@ public class Mk_EventStore implements EventStore
                     + " currently set at %d", snapshot.getVersion(), erp));
         
         if(snapshot.getVersion() == 0)
-            return;
+            if(directory.doesPageExist(entity, snapshot.getEntityId(), 0))
+                throw new EntityChronologicalException(String.format("Save state "
+                        + "for this entity already exists a new snapshot for "
+                        + "this entity with a version of 0 is not expected."));
+            else
+                return;
         
         EntityPage page = directory.getEntityPage(entity, snapshot.getEntityId());
         //pending events yet to reach the page can be included for when an EntityToken is
