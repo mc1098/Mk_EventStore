@@ -58,51 +58,65 @@ import java.util.TreeSet;
 public class Mk_EventStore implements EventStore
 {
     
-    public static EventStore create() throws IOException, EventStoreException
+    public static EventStore create() throws EventStoreException
     {
-        TransactionPage transactionPage;
-        TransactionParser tp = new Mk_TransactionParser();
-        File file = new File("Entity/TL");
-        
-        if(!file.exists())
+        try 
         {
-            if(!(file.getParentFile().mkdirs() && file.createNewFile()))
-                throw new EventStoreException("Unable to create the required"
-                        + " directories or files in order for setup.");
-            transactionPage = new Mk_TransactionPage(file, tp);
-        }
-        else
-        {
-            ByteBuffer buffer;
-            try(FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.READ))
+            TransactionPage transactionPage;
+            TransactionParser tp = new Mk_TransactionParser();
+            File file = new File("Entity/TL");
+
+            if(!file.exists())
             {
-                buffer = ByteBuffer.allocate((int)fc.size());
-                int read;
-                do
-                {
-                    read = fc.read(buffer);
-                } while(read > 0);
+                if(!(file.getParentFile().mkdirs() && file.createNewFile()))
+                    throw new EventStoreException("Unable to create the required"
+                            + " directories or files in order for setup.");
+                transactionPage = new Mk_TransactionPage(file, tp);
             }
-            transactionPage = Mk_TransactionPage.parse(file, buffer, tp);
+            else
+            {
+                ByteBuffer buffer;
+                try(FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.READ))
+                {
+                    buffer = ByteBuffer.allocate((int)fc.size());
+                    int read;
+                    do
+                    {
+                        read = fc.read(buffer);
+                    } while(read > 0);
+                    transactionPage = Mk_TransactionPage.parse(file, buffer, tp);
+                }
+                catch(IOException ex)
+                {
+                    throw new EventStoreException("An error occurred when reading "
+                            + "transactions from the transaction log.", ex);
+
+                }
+
+            }
+
+            file = new File("Entity/ENM");
+
+            if(!file.exists() && !file.createNewFile())
+                    throw new EventStoreException("Unable to create the required"
+                            + " ENM file in order for setup.");
+
+            EventFormat ef = new SimpleEventFormat();
+            PageDirectory directory = Mk_PageDirectory.setup(ef, transactionPage);
+            EntityPageParser parser = directory.getEntityPageParser();
+            TransactionWorker tw = new Mk_TransactionWorker(transactionPage, directory, parser);
+            tw.flush();
+            tw.start();
+            return new Mk_EventStore(directory, transactionPage, tw);
+        } catch(IOException ex)
+        {
+            throw new EventStoreException("An error occurred trying to create "
+                    + "a new file in the relative file.", ex);
         }
-        
-        file = new File("Entity/ENM");
-        
-        if(!file.exists() && !file.createNewFile())
-                throw new EventStoreException("Unable to create the required"
-                        + " ENM file in order for setup.");
-        
-        EventFormat ef = new SimpleEventFormat();
-        PageDirectory directory = Mk_PageDirectory.setup(ef, transactionPage);
-        EntityPageParser parser = directory.getEntityPageParser();
-        TransactionWorker tw = new Mk_TransactionWorker(transactionPage, directory, parser);
-        tw.flush();
-        tw.start();
-        return new Mk_EventStore(directory, transactionPage, tw);
     }
     
     public static EventStore create(PageDirectory directory, 
-            TransactionPage transactionPage) throws EventStoreException, IOException
+            TransactionPage transactionPage) throws EventStoreException
     {
         EntityPageParser parser = directory.getEntityPageParser();
         TransactionWorker tw = new Mk_TransactionWorker(transactionPage, directory, parser);
