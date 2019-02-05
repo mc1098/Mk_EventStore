@@ -74,26 +74,7 @@ public class Mk_EventStore implements EventStore
                 transactionPage = new Mk_TransactionPage(file, tp);
             }
             else
-            {
-                ByteBuffer buffer;
-                try(FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.READ))
-                {
-                    buffer = ByteBuffer.allocate((int)fc.size());
-                    int read;
-                    do
-                    {
-                        read = fc.read(buffer);
-                    } while(read > 0);
-                    transactionPage = Mk_TransactionPage.parse(file, buffer, tp);
-                }
-                catch(IOException ex)
-                {
-                    throw new EventStoreException("An error occurred when reading "
-                            + "transactions from the transaction log.", ex);
-
-                }
-
-            }
+                transactionPage = parseTransactionsFromFile(file, tp);
 
             file = new File("Entity/ENM");
 
@@ -112,6 +93,26 @@ public class Mk_EventStore implements EventStore
         {
             throw new EventStoreException("An error occurred trying to create "
                     + "a new file in the relative file.", ex);
+        }
+    }
+
+    private static TransactionPage parseTransactionsFromFile(File file, 
+            TransactionParser tp) throws EventStoreException
+    {
+        
+        try (final FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.READ))
+        {
+            ByteBuffer buffer = ByteBuffer.allocate((int)fc.size());
+            int read;
+            do
+            {
+                read = fc.read(buffer);
+            } while(read > 0);
+            return Mk_TransactionPage.parse(file, buffer, tp);
+        }catch(IOException ex)
+        {
+            throw new EventStoreException("An error occurred when reading "
+                    + "transactions from the transaction log.", ex);
         }
     }
     
