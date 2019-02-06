@@ -18,16 +18,19 @@ package com.mc1098.mk_eventstore.Page;
 
 import com.mc1098.mk_eventstore.Entity.Mk_Snapshot;
 import com.mc1098.mk_eventstore.Entity.Snapshot;
-import com.mc1098.mk_eventstore.Event.EventFormat;
-import com.mc1098.mk_eventstore.Event.SimpleEventFormat;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
+import com.mc1098.mk_eventstore.Exception.TransactionException;
 import com.mc1098.mk_eventstore.Transaction.Mk_TransactionPage;
 import com.mc1098.mk_eventstore.Transaction.Mk_TransactionParser;
+import com.mc1098.mk_eventstore.Transaction.Transaction;
 import com.mc1098.mk_eventstore.Transaction.TransactionPage;
+import com.mc1098.mk_eventstore.Transaction.TransactionParser;
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -313,15 +316,76 @@ public class Mk_PageDirectoryTest
         fail("The test case is a prototype.");
     }
 
-//    @Test
+    @Test
     public void testEquals()
     {
         System.out.println("equals");
-        Object o = null;
-        Mk_PageDirectory instance = null;
-        boolean expResult = false;
-        boolean result = instance.equals(o);
-        assertEquals(expResult, result);
+        
+        TransactionParser tParser = new Mk_TransactionParser();
+        TransactionPage tp = new Mk_TransactionPage(new File("Entity/TL"), tParser);
+        Map<String, Long> names = new HashMap<>();
+        Map<String, Long> names2 = new HashMap<String, Long>() {{put("k", 1L);}};
+        Map<Long, Integer> erp = new HashMap<>();
+        Map<Long, Integer> erp2 = new HashMap<Long, Integer>() {{put(1L, 2);}};
+        
+        PageDirectory dir = new Mk_PageDirectory(null, tp, names, erp);
+        PageDirectory dir2 = new Mk_PageDirectory(null, new DummyTransactionPage(), names, erp);
+        PageDirectory dir3 = new Mk_PageDirectory(null, tp, names2, erp);
+        PageDirectory dir4 = new Mk_PageDirectory(null, tp, names, erp2);
+        
+        assertEquals(dir, dir); //sanity check
+        assertNotEquals(dir, dir2);
+        assertNotEquals(dir, dir3);
+        assertNotEquals(dir, dir4);
+        assertNotEquals(dir, new Object());
+        
+    }
+    
+    class DummyTransactionPage implements TransactionPage
+    {
+
+        @Override
+        public void writeTransaction(Transaction transaction) throws TransactionException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void writeTransaction(List<Transaction> transactions) throws TransactionException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public boolean hasTransaction()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public Transaction poll(long l, TimeUnit tu) throws InterruptedException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void confirmTransactionProcessed(Transaction transaction)
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void truncateLog() throws IOException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void refresh()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+        
     }
     
 }
