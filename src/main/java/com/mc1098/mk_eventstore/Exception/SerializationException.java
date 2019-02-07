@@ -23,6 +23,11 @@ package com.mc1098.mk_eventstore.Exception;
  */
 public class SerializationException extends EventStoreException
 {
+    
+    public SerializationException(String message)
+    {
+        super(message);
+    }
 
     public SerializationException(Throwable thrwbl)
     {
