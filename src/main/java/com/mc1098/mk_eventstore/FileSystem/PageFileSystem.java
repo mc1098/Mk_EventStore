@@ -48,9 +48,8 @@ public class PageFileSystem implements RelativeFileSystem
         {
             boolean created = file.mkdir();
             if(created)
-                LOGGER.log(Level.FINEST, String.format("Directory %s created at path"
-                        + " %s as the root directory for PageFileSystem.", 
-                        file.getName(), file.getPath()));
+                LOGGER.log(Level.FINEST, "Directory {0} created at path {1} as the root directory for PageFileSystem.", 
+                        new Object[]{file.getName(), file.getPath()});
             
             return new PageFileSystem(file);
             
@@ -80,13 +79,13 @@ public class PageFileSystem implements RelativeFileSystem
         File file = path.toFile();
         
         if(file.getParentFile().mkdirs())
-            LOGGER.log(Level.FINEST, String.format("Created directories to "
-                    + "form path %s", file.getPath()));
+            LOGGER.log(Level.FINEST, "Created directories to form path {0}.", 
+                    file.getPath());
         try
         {
             if(!file.createNewFile())
-                LOGGER.log(Level.FINEST, String.format("Created file %s at path "
-                        + "%s.", file.getName(), file.getPath()));
+                LOGGER.log(Level.FINEST, "Created file {0} at path {1}.",
+                        new Object[]{file.getName(), file.getPath()});
             
             return file;
         } catch(IOException ex)
@@ -187,8 +186,6 @@ public class PageFileSystem implements RelativeFileSystem
         }
     }
 
-    
-    
     @Override
     public boolean equals(Object o)
     {
