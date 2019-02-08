@@ -137,7 +137,7 @@ public class Mk_PageDirectory implements PageDirectory
     {
         try
         {
-            File file = fileSystem.getFile(Long.toHexString(entity), 
+            File file = fileSystem.getDirectory(Long.toHexString(entity), 
                     Long.toHexString(id));
             return file.list().length - 1L;
         } catch(FileSystemException ex)
