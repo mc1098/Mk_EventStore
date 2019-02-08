@@ -17,7 +17,6 @@
 package com.mc1098.mk_eventstore.Transaction;
 
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
-import com.mc1098.mk_eventstore.Exception.TransactionException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
