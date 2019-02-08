@@ -79,6 +79,22 @@ public interface RelativeFileSystem
     public File getOrCreateDirectory(String...strings) throws FileSystemException;
     
     /**
+     * Returns a {@link File} object at the path given relative to the root 
+     * directory only if a file already exists at this path.
+     * 
+     * The method guarantees that the file exists on the system, or did at 
+     * the time of this method.
+     * 
+     * @param strings to be joined after the root directory to create a path.
+     * @return Retrieves a {@link File} object at the path given relative to the 
+     * root directory only if this file already exists at this path.
+     * @throws FileSystemException If the file does not exist at this path or
+     * the file is a directory.
+     */
+    public File getFile(String...strings) throws FileSystemException;
+            
+    
+    /**
      * Creates a File object at the path given relative to the root directory.
      * This method will create all the required parent directories required to
      * create this file.

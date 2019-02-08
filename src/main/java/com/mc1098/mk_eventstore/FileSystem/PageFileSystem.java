@@ -100,6 +100,20 @@ public class PageFileSystem implements RelativeFileSystem
             return file;
     }
     
+    @Override
+    public File getFile(String...strings) throws FileSystemException
+    {
+        Path path = getRelativePath(strings);
+        File file = path.toFile();
+        
+        if(file.exists() && !file.isDirectory())
+            return file;
+        else
+            throw new FileSystemException(String.format("The file %s at path %s "
+                    + "does not exist or exists but is a directory.",
+                    file.getName(), file.getPath()));
+    }
+    
     @Override 
     public void createFile(String...strings) throws FileSystemException
     {
