@@ -16,7 +16,7 @@
  */
 package com.mc1098.mk_eventstore.Transaction;
 
-import com.mc1098.mk_eventstore.Exception.TransactionException;
+import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -27,8 +27,8 @@ import java.util.concurrent.TimeUnit;
  */
 public interface TransactionPage
 {
-    public void writeTransaction(Transaction transaction) throws TransactionException;
-    public void writeTransaction(List<Transaction> transactions)throws TransactionException;
+    public void writeTransaction(Transaction transaction) throws EventStoreException;
+    public void writeTransaction(List<Transaction> transactions)throws EventStoreException;
     public boolean hasTransaction();
     public Transaction poll(long l, TimeUnit tu) throws InterruptedException;
     public void confirmTransactionProcessed(Transaction transaction);
