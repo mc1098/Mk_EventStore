@@ -30,7 +30,7 @@ public interface TransactionPage
     public void writeTransaction(Transaction transaction) throws EventStoreException;
     public void writeTransaction(List<Transaction> transactions)throws EventStoreException;
     public boolean hasTransaction();
-    public Transaction poll(long l, TimeUnit tu) throws InterruptedException;
+    public Transaction peek();
     public void confirmTransactionProcessed(Transaction transaction);
     public void truncateLog() throws IOException;
     public void refresh();

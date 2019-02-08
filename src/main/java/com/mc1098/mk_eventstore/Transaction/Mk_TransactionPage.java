@@ -16,6 +16,7 @@
  */
 package com.mc1098.mk_eventstore.Transaction;
 
+import com.mc1098.mk_eventstore.Exception.EventStoreError;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import com.mc1098.mk_eventstore.Exception.ParseException;
 import com.mc1098.mk_eventstore.Exception.TransactionException;
@@ -113,9 +114,9 @@ public class Mk_TransactionPage implements TransactionPage
     public boolean hasTransaction() {return !transactions.isEmpty();}
     
     @Override
-    public Transaction poll(long l, TimeUnit tu) throws InterruptedException
+    public Transaction peek()
     {
-        return transactions.poll(l, tu);
+        return transactions.peek();
     }
 
     @Override
@@ -129,6 +130,8 @@ public class Mk_TransactionPage implements TransactionPage
     @Override
     public void truncateLog() throws IOException
     {
+        if(!file.exists())
+            throw new EventStoreError("No Transaction file exists");
         try(FileChannel fc = FileChannel.open(file.toPath(), 
                 StandardOpenOption.WRITE))
         {
