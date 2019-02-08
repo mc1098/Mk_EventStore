@@ -109,6 +109,10 @@ public class PageFileSystem implements RelativeFileSystem
                     + "file at path %s as a directory already exists at this path.", 
                     file.getPath()));
         
+        if(file.getParentFile().mkdirs())
+            LOGGER.log(Level.FINEST, "Created directories to form path {0}.", 
+                    file.getPath());
+        
         try
         {
             if(file.createNewFile())
