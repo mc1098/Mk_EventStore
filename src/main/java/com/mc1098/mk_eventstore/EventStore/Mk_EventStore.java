@@ -19,27 +19,20 @@ package com.mc1098.mk_eventstore.EventStore;
 import com.mc1098.mk_eventstore.Entity.EntityToken;
 import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Event.Event;
-import com.mc1098.mk_eventstore.Event.EventFormat;
-import com.mc1098.mk_eventstore.Event.SimpleEventFormat;
+import com.mc1098.mk_eventstore.Event.SimpleEventConverter;
 import com.mc1098.mk_eventstore.Exception.EntityChronologicalException;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import com.mc1098.mk_eventstore.Page.EntityPage;
-import com.mc1098.mk_eventstore.Page.EntityPageParser;
 import com.mc1098.mk_eventstore.Page.Mk_PageDirectory;
 import com.mc1098.mk_eventstore.Page.PageDirectory;
 import com.mc1098.mk_eventstore.Transaction.Mk_TransactionPage;
-import com.mc1098.mk_eventstore.Transaction.Mk_TransactionParser;
+import com.mc1098.mk_eventstore.Transaction.Mk_TransactionConverter;
 import com.mc1098.mk_eventstore.Transaction.Mk_TransactionWorker;
 import com.mc1098.mk_eventstore.Transaction.Transaction;
 import com.mc1098.mk_eventstore.Transaction.TransactionBuilder;
 import com.mc1098.mk_eventstore.Transaction.TransactionPage;
-import com.mc1098.mk_eventstore.Transaction.TransactionParser;
 import com.mc1098.mk_eventstore.Transaction.TransactionWorker;
 import java.io.File;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,6 +43,12 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import com.mc1098.mk_eventstore.Page.EntityPageConverter;
+import com.mc1098.mk_eventstore.Event.EventConverter;
+import com.mc1098.mk_eventstore.FileSystem.PageFileSystem;
+import com.mc1098.mk_eventstore.FileSystem.RelativeFileSystem;
+import java.nio.file.Paths;
+import com.mc1098.mk_eventstore.Transaction.TransactionConverter;
 
 /**
  *
@@ -60,67 +59,33 @@ public class Mk_EventStore implements EventStore
     
     public static EventStore create() throws EventStoreException
     {
-        try 
-        {
-            TransactionPage transactionPage;
-            TransactionParser tp = new Mk_TransactionParser();
-            File file = new File("Entity/TL");
-
-            if(!file.exists())
-            {
-                if(!(file.getParentFile().mkdirs() && file.createNewFile()))
-                    throw new EventStoreException("Unable to create the required"
-                            + " directories or files in order for setup.");
-                transactionPage = new Mk_TransactionPage(file, tp);
-            }
-            else
-                transactionPage = parseTransactionsFromFile(file, tp);
-
-            file = new File("Entity/ENM");
-
-            if(!file.exists() && !file.createNewFile())
-                    throw new EventStoreException("Unable to create the required"
-                            + " ENM file in order for setup.");
-
-            EventFormat ef = new SimpleEventFormat();
-            PageDirectory directory = Mk_PageDirectory.setup(ef, transactionPage);
-            EntityPageParser parser = directory.getEntityPageParser();
-            TransactionWorker tw = new Mk_TransactionWorker(transactionPage, directory, parser);
-            tw.flush();
-            tw.start();
-            return new Mk_EventStore(directory, transactionPage, tw);
-        } catch(IOException ex)
-        {
-            throw new EventStoreException("An error occurred trying to create "
-                    + "a new file in the relative file.", ex);
-        }
-    }
-
-    private static TransactionPage parseTransactionsFromFile(File file, 
-            TransactionParser tp) throws EventStoreException
-    {
+        RelativeFileSystem rfs = PageFileSystem.ofRoot(Paths.get("Entity"));
         
-        try (final FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.READ))
-        {
-            ByteBuffer buffer = ByteBuffer.allocate((int)fc.size());
-            int read;
-            do
-            {
-                read = fc.read(buffer);
-            } while(read > 0);
-            return Mk_TransactionPage.parse(file, buffer, tp);
-        }catch(IOException ex)
-        {
-            throw new EventStoreException("An error occurred when reading "
-                    + "transactions from the transaction log.", ex);
-        }
+        TransactionConverter tc = new Mk_TransactionConverter();
+        File tLog = rfs.getOrCreateFile("TL");
+        Queue<Transaction> transactions = new ArrayDeque<>(rfs
+                .readAndParseRecursively(tc, "TL"));
+        TransactionPage transactionPage = new Mk_TransactionPage(transactions, 
+                tLog, tc);
+        
+        rfs.createFile("ENM");
+        
+        EventConverter ef = new SimpleEventConverter();
+        PageDirectory directory = Mk_PageDirectory.setup(rfs, ef, transactionPage);
+        EntityPageConverter converter = directory.getEntityPageConverter();
+        TransactionWorker tw = new Mk_TransactionWorker(transactionPage, 
+                directory, converter);
+        tw.flush();
+        tw.start();
+        return new Mk_EventStore(directory, transactionPage, tw);
     }
     
     public static EventStore create(PageDirectory directory, 
             TransactionPage transactionPage) throws EventStoreException
     {
-        EntityPageParser parser = directory.getEntityPageParser();
-        TransactionWorker tw = new Mk_TransactionWorker(transactionPage, directory, parser);
+        EntityPageConverter parser = directory.getEntityPageConverter();
+        TransactionWorker tw = new Mk_TransactionWorker(transactionPage, 
+                directory, parser);
         tw.flush();
         tw.start();
         return new Mk_EventStore(directory, transactionPage, tw);
