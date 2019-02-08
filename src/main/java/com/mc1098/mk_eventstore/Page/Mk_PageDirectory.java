@@ -122,8 +122,8 @@ public class Mk_PageDirectory implements PageDirectory
             throws EventStoreException
     {
         long pageNo = getMostRecentPageNo(id, entity);
-        String path = Paths.get(fileSystem.getRootPath(), Long.toHexString(entity), 
-                Long.toHexString(id), Long.toHexString(pageNo)).toString();
+        String path = Paths.get(Long.toHexString(entity), Long.toHexString(id),
+                Long.toHexString(pageNo)).toString();
         
         if(entityPages.containsKey(path))
             return entityPages.get(path);
