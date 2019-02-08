@@ -39,6 +39,7 @@ import java.util.logging.Logger;
  */
 public class PageFileSystem implements RelativeFileSystem
 {
+    
     public static PageFileSystem ofRoot(Path root) throws FileSystemException
     {
         if(root.isAbsolute())
@@ -60,6 +61,7 @@ public class PageFileSystem implements RelativeFileSystem
         
     }
     
+    private final static String LOG_MSG_MKDIRS = "Created directories to form path {0}.";
     private final static Logger LOGGER = Logger.getLogger(PageFileSystem.class.getName());
     
     private final String root;
@@ -82,12 +84,12 @@ public class PageFileSystem implements RelativeFileSystem
         File file = path.toFile();
         
         if(file.getParentFile().mkdirs())
-            LOGGER.log(Level.FINEST, "Created directories to form path {0}.", 
+            LOGGER.log(Level.FINEST, LOG_MSG_MKDIRS, 
                     file.getPath());
         
         if(file.mkdir())
-            LOGGER.log(Level.FINEST, "Created directories to form path {0}.", 
-                    file.getPath());
+            LOGGER.log(Level.FINEST, "Created directory {0}.", 
+                    file.getName());
         
         if(!file.isDirectory())
             throw new FileSystemException(String.format("Unable to create "
@@ -110,7 +112,7 @@ public class PageFileSystem implements RelativeFileSystem
                     file.getPath()));
         
         if(file.getParentFile().mkdirs())
-            LOGGER.log(Level.FINEST, "Created directories to form path {0}.", 
+            LOGGER.log(Level.FINEST, LOG_MSG_MKDIRS, 
                     file.getPath());
         
         try
@@ -131,7 +133,7 @@ public class PageFileSystem implements RelativeFileSystem
         File file = path.toFile();
         
         if(file.getParentFile().mkdirs())
-            LOGGER.log(Level.FINEST, "Created directories to form path {0}.", 
+            LOGGER.log(Level.FINEST, LOG_MSG_MKDIRS, 
                     file.getPath());
         try
         {
