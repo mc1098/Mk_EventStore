@@ -75,42 +75,6 @@ public class Mk_TransactionPageTest
     }
 
     @Test
-    public void testParse() throws Exception
-    {
-        System.out.println("parse");
-        
-        Transaction transaction = new Transaction(TransactionType.PUT_SNAPSHOT, 
-                0, 0, 1, 0, new byte[]{111});
-        TransactionConverter parser = new Mk_TransactionConverter();
-        TransactionPage expResult = new Mk_TransactionPage(transactionLogFile, parser);
-        expResult.writeTransaction(transaction);
-        expResult.refresh();
-        
-        byte[] bytes = readFile(transactionLogFile);
-        ByteBuffer buffer = ByteBuffer.wrap(bytes);
-        TransactionPage result = Mk_TransactionPage.parse(transactionLogFile, 
-                buffer, parser);
-        
-        assertEquals(expResult, result);
-    }
-    
-    @Test
-    public void testParse_EmptyFile() throws Exception
-    {
-        System.out.println("parse_EmptyFile");
-        
-        TransactionConverter parser = new Mk_TransactionConverter();
-        TransactionPage expResult = new Mk_TransactionPage(transactionLogFile, parser);
-        
-        byte[] bytes = readFile(transactionLogFile);
-        ByteBuffer buffer = ByteBuffer.wrap(bytes);
-        TransactionPage result = Mk_TransactionPage.parse(transactionLogFile, 
-                buffer, parser);
-        
-        assertEquals(expResult, result);
-    }
-
-    @Test
     public void testWriteTransaction_HasTransaction() throws Exception
     {
         System.out.println("writeTransaction_HasTransaction");
