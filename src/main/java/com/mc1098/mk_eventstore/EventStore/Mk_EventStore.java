@@ -73,18 +73,19 @@ public class Mk_EventStore implements EventStore
         EventConverter ef = new SimpleEventConverter();
         PageDirectory directory = Mk_PageDirectory.setup(rfs, ef, transactionPage);
         EntityPageConverter converter = directory.getEntityPageConverter();
-        TransactionWorker tw = new Mk_TransactionWorker(transactionPage, 
+        TransactionWorker tw = new Mk_TransactionWorker(rfs, transactionPage, 
                 directory, converter);
         tw.flush();
         tw.start();
         return new Mk_EventStore(directory, transactionPage, tw);
     }
     
-    public static EventStore create(PageDirectory directory, 
-            TransactionPage transactionPage) throws EventStoreException
+    public static EventStore create(RelativeFileSystem rfs, 
+            PageDirectory directory, TransactionPage transactionPage) 
+            throws EventStoreException
     {
         EntityPageConverter parser = directory.getEntityPageConverter();
-        TransactionWorker tw = new Mk_TransactionWorker(transactionPage, 
+        TransactionWorker tw = new Mk_TransactionWorker(rfs, transactionPage, 
                 directory, parser);
         tw.flush();
         tw.start();
