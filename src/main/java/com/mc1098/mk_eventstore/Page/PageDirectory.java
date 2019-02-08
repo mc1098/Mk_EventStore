@@ -42,6 +42,6 @@ public interface PageDirectory
     public EntityPage createPendingEntityPage(long entity, long id, long pageNo, Snapshot snapshot);
     public EntityPage confirmPendingPage(EntityPage page) throws EventStoreException;
     public TransactionPage getTransactionPage();
-    public EntityPageParser getEntityPageParser();
-    public void setEntityPageParser(EntityPageParser parser);
+    public EntityPageConverter getEntityPageConverter();
+    public void setEntityPageConverter(EntityPageConverter parser);
 }
