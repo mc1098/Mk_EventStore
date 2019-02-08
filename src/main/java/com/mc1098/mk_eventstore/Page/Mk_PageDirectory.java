@@ -137,7 +137,7 @@ public class Mk_PageDirectory implements PageDirectory
     {
         try
         {
-            File file = fileSystem.getOrCreateFile(Long.toHexString(entity), 
+            File file = fileSystem.getFile(Long.toHexString(entity), 
                     Long.toHexString(id));
             return file.list().length - 1L;
         } catch(FileSystemException ex)
@@ -242,7 +242,7 @@ public class Mk_PageDirectory implements PageDirectory
         long entity = page.getEntity();
         
         EntityMetaData emd = new EntityMetaData(entityName, entity, 
-                getEPR(entity));
+                page.getEventPageRatio());
         
         byte[] bytes = EntityMetaData.CONVERTER.toBytes(emd);
         fileSystem.write(WriteOption.APPEND, bytes, "ENM");
@@ -251,13 +251,6 @@ public class Mk_PageDirectory implements PageDirectory
     @Override
     public EntityPageConverter getEntityPageConverter() {return entityPageConverter;}
 
-    @Override
-    public void setEntityPageConverter(EntityPageConverter parser)
-    {
-        if(parser != null)
-            this.entityPageConverter = parser;
-    }
-    
     @Override
     public boolean equals(Object o)
     {
