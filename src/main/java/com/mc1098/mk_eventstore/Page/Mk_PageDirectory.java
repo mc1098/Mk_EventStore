@@ -18,22 +18,20 @@ package com.mc1098.mk_eventstore.Page;
 
 import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
-import com.mc1098.mk_eventstore.Event.EventFormat;
-import com.mc1098.mk_eventstore.Exception.ParseException;
 import com.mc1098.mk_eventstore.Exception.NoPageFoundException;
+import com.mc1098.mk_eventstore.FileSystem.RelativeFileSystem;
 import com.mc1098.mk_eventstore.Transaction.TransactionPage;
 import com.mc1098.mk_eventstore.Util.TouchMap;
 import java.io.File;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import com.mc1098.mk_eventstore.Event.EventConverter;
+import com.mc1098.mk_eventstore.Exception.FileSystem.FileSystemException;
+import com.mc1098.mk_eventstore.FileSystem.WriteOption;
 
 /**
  *
@@ -42,61 +40,43 @@ import java.util.Objects;
 public class Mk_PageDirectory implements PageDirectory
 {
     
-    public static Mk_PageDirectory setup(EventFormat ef, TransactionPage transactionPage) 
+    public static Mk_PageDirectory setup(RelativeFileSystem rfs,
+            EventConverter ef, TransactionPage transactionPage) 
             throws EventStoreException
     {
-        File enm = new File("Entity/ENM");
+        
+        List<EntityMetaData> emds = rfs
+                .readAndParseRecursively(EntityMetaData.PARSER, "ENM");
         
         Map<String, Long> entityNames = new HashMap<>();
         Map<Long, Integer> entityErp = new HashMap<>();
         
-        try(FileChannel fc = FileChannel.open(enm.toPath(), StandardOpenOption.READ))
+        emds.forEach(emd -> 
         {
-            ByteBuffer buffer = ByteBuffer.allocate((int)fc.size());
-            int read;
-            do
-            {                
-                read = fc.read(buffer);
-            } while (read > 0);
-            buffer.rewind();
-            while (buffer.hasRemaining())
-            {                
-                long entity = buffer.getLong();
-                int erp = buffer.getInt();
-                int nameSize = buffer.getInt();
-                byte[] nameBytes = new byte[nameSize];
-                buffer.get(nameBytes);
-                String name = new String(nameBytes, StandardCharsets.UTF_8);
-                
-                entityErp.put(entity, erp);
-                entityNames.put(name, entity);
-            }
-            
-            return new Mk_PageDirectory(ef, transactionPage, entityNames, 
-                    entityErp);
-            
-        } catch(IOException ex)
-        {
-            throw new EventStoreException(ex);
-        }
+            entityNames.put(emd.getName(), emd.getEntity());
+            entityErp.put(emd.getEntity(), emd.getErp());
+        });
+        
+        return new Mk_PageDirectory(rfs, ef, transactionPage, entityNames,
+                entityErp);
+        
     }
     
-    public static final String ENTITY_ROOT = "Entity";
-    
-    
+    private final RelativeFileSystem fileSystem;
     private final TouchMap<String, EntityPage> entityPages;
-    private EntityPageParser entityPageParser;
+    private EntityPageConverter entityPageConverter;
     private final Map<String, Long> entityNames;
     private final Map<Long, Integer> entityERP;
     private final Map<String, EntityPage> pending;
     private final TransactionPage transactionPage;
     
-    protected Mk_PageDirectory(EventFormat ef, 
+    protected Mk_PageDirectory(RelativeFileSystem rfs, EventConverter ef, 
             TransactionPage transactionPage, 
             Map<String, Long> entityNames, Map<Long, Integer> entityERP)
     {
+        this.fileSystem = rfs;
         this.entityPages = new TouchMap<>();
-        this.entityPageParser = new Mk_EntityPageParser(this, ef);
+        this.entityPageConverter = new Mk_EntityPageConverter(this, ef);
         this.entityNames = entityNames;
         this.entityERP = entityERP;
         this.pending = new HashMap<>();
@@ -142,97 +122,61 @@ public class Mk_PageDirectory implements PageDirectory
             throws EventStoreException
     {
         long pageNo = getMostRecentPageNo(id, entity);
-        String path = getRelativePath(Long.toHexString(pageNo), ENTITY_ROOT, 
-                Long.toHexString(entity), Long.toHexString(id));
+        String path = Paths.get(fileSystem.getRootPath(), Long.toHexString(entity), 
+                Long.toHexString(id), Long.toHexString(pageNo)).toString();
         
         if(entityPages.containsKey(path))
             return entityPages.get(path);
         
-        File file = getRelativeFile(Long.toHexString(pageNo), ENTITY_ROOT, 
-                Long.toHexString(entity), Long.toHexString(id));
-        
-        return getPageFromFile(file);
+        return fileSystem.readAndParse(entityPageConverter, Long.toHexString(entity), 
+                Long.toHexString(id), Long.toHexString(pageNo));
     }
 
     private long getMostRecentPageNo(long id, long entity) 
             throws NoPageFoundException
     {
-        File file = getRelativeFile(Long.toHexString(id), ENTITY_ROOT,
-                Long.toHexString(entity));
-        return file.list().length - 1L;
-    }
-    
-    private EntityPage getPageFromFile(File file) throws EventStoreException
-    {
-        try(FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.READ))
+        try
         {
-            ByteBuffer buffer = ByteBuffer.allocate((int)fc.size());
-            fc.read(buffer);
-            buffer.rewind();
-            EntityPage page = entityPageParser.parse(buffer);
-            entityPages.put(file.getPath(), page);
-            return page;
-        } catch(IOException | ParseException ex)
+            File file = fileSystem.getOrCreateFile(Long.toHexString(entity), 
+                    Long.toHexString(id));
+            return file.list().length - 1L;
+        } catch(FileSystemException ex)
         {
-            throw new EventStoreException(ex);
+            throw new NoPageFoundException(ex);
         }
-    }
-    
-    private File getRelativeFile(String fileName, String...dirs) 
-            throws NoPageFoundException
-    {
-        String path = getRelativePath(fileName, dirs);
-        
-        File file = new File(path);
-        if(!file.exists())
-            throw new NoPageFoundException(String.format("No such file found "
-                    + "with path %s", path));
-        
-        return file;
-        
-    }
-
-    private String getRelativePath(String fileName, String...dirs)
-    {
-        StringBuilder sb = new StringBuilder("");
-        for (String dir : dirs)
-            sb.append(String.format("%s/", dir));
-        sb.append(fileName);
-        return sb.toString();
     }
     
     @Override
     public boolean doesPageExist(long entity, long id, long pageNo)
     {
-        String path = getRelativePath(Long.toHexString(pageNo), ENTITY_ROOT,
-                Long.toHexString(entity), Long.toHexString(id));
+        String path = Paths.get(Long.toHexString(entity), Long.toHexString(id), 
+                Long.toHexString(pageNo)).toString();
         
         if(entityPages.containsKey(path))
             return true;
-        return new File(path).exists();
+        return fileSystem.doesFileExist(path);
     }
     
     @Override
     public EntityPage getEntityPage(long entity, long id, long pageNo) throws 
             EventStoreException
     {
-        File file = getRelativeFile(Long.toHexString(pageNo), ENTITY_ROOT, 
-                Long.toHexString(entity), Long.toHexString(id));
+        String path = Paths.get(Long.toHexString(entity), 
+                Long.toHexString(id), Long.toHexString(pageNo)).toString();
         
-        if(entityPages.containsKey(file.getPath()))
-            return entityPages.get(file.getPath());
+        if(entityPages.containsKey(path))
+            return entityPages.get(path);
         
-        return getPageFromFile(file);
+        return fileSystem.readAndParse(entityPageConverter, path);
     }
 
     @Override
     public List<EntityPage> getEntityPages(long entity, long id, long pageFrom) throws 
             EventStoreException
     {
-        File file = getRelativeFile(Long.toHexString(id), ENTITY_ROOT, 
-                Long.toHexString(entity));
+        File file = fileSystem.getOrCreateDirectory(Long.toHexString(entity), 
+                Long.toHexString(id));
         long files = file.list().length;
-        
         return getEntityPages(entity, id, pageFrom, files);
     }
 
@@ -251,8 +195,8 @@ public class Mk_PageDirectory implements PageDirectory
     public EntityPage createPendingEntityPage(long entity, long id, 
             long pageNo, Snapshot snapshot)
     {
-        String path = getRelativePath(Long.toHexString(pageNo), ENTITY_ROOT,
-                Long.toHexString(entity), Long.toHexString(id));
+        String path = Paths.get(Long.toHexString(entity), 
+                Long.toHexString(id), Long.toHexString(pageNo)).toString();
         EntityPage page = new Mk_EntityPage(pageNo, entity, id, 
                 getEPR(entity), snapshot);
         pending.put(path, page);
@@ -263,45 +207,25 @@ public class Mk_PageDirectory implements PageDirectory
     public synchronized EntityPage confirmPendingPage(EntityPage page)
             throws EventStoreException
     {
-        String entityPath = getRelativePath(Long.toHexString(page.getEntity()), 
-                ENTITY_ROOT);
-        
-        String path = getRelativePath(Long.toHexString(page.getPageId()), 
-                ENTITY_ROOT, Long.toHexString(page.getEntity()), 
-                Long.toHexString(page.getEntityId()));
+        String path = Paths.get(Long.toHexString(page.getEntity()), 
+                Long.toHexString(page.getEntityId()), 
+                Long.toHexString(page.getPageId())).toString();
         
         if(!pending.containsKey(path))
             throw new EventStoreException("An attempt to confirm a pending page "
                     + "when no such page is pending confirmation.");
         
-        try
-        {
-            File entityFile = new File(entityPath);
-            if(!entityFile.exists())
-                newEntity(entityFile, page.getEntity(), 
-                        page.getSnapshot().getEntityName());
-            
-            File file = new File(path);
-            if(file.exists())
+        if(!entityNames.containsKey(page.getSnapshot().getEntityName()))
+            newEntity(page);
+        
+        if(fileSystem.doesFileExist(path))
                 throw new EventStoreException(String.format("Cannot confirm "
                         + "pending page as the Entity Page already exists for "
                         + "the path %s.", path));
             
-            file.getParentFile().mkdirs();
-            if(!(file.createNewFile()))
-                throw new EventStoreException(String.format("Unable to create "
-                        + "the needed file [%s] required to confirm a pending "
-                        + "page.", file.getPath()));
-            
-            try(FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.WRITE))
-            {
-                fc.write(ByteBuffer.wrap(entityPageParser.toBytes(page)));
-            }
-            
-        }catch(IOException ex)
-        {
-            throw new EventStoreException(ex);
-        }
+        fileSystem.createFile(path);
+        byte[] bytes = entityPageConverter.toBytes(page);
+        fileSystem.write(WriteOption.WRITE, bytes, path);
         pending.remove(path);
         entityPages.put(path, page);
         return page;
@@ -311,40 +235,27 @@ public class Mk_PageDirectory implements PageDirectory
     @Override
     public TransactionPage getTransactionPage() {return transactionPage;}
 
-    private void newEntity(File file, long entity, String entityName) 
+    private void newEntity(EntityPage page) 
             throws EventStoreException
     {
-        int size = Long.BYTES + (Integer.BYTES * 2);
-        byte[] nameBytes = entityName.getBytes(StandardCharsets.UTF_8);
-        size+= nameBytes.length;
+        String entityName = page.getSnapshot().getEntityName();
+        long entity = page.getEntity();
         
-        ByteBuffer buffer = ByteBuffer.allocate(size);
-        buffer.putLong(entity);
-        buffer.putInt(20);
-        buffer.putInt(nameBytes.length);
-        buffer.put(nameBytes);
-        buffer.rewind();
+        EntityMetaData emd = new EntityMetaData(entityName, entity, 
+                getEPR(entity));
         
-        file.mkdir();
-        String enmPath = getRelativePath("ENM", ENTITY_ROOT);
-        File enm = new File(enmPath);
-        try(FileChannel fc = FileChannel.open(enm.toPath(), StandardOpenOption.APPEND))
-        {
-            fc.write(buffer);
-        } catch(IOException ex)
-        {
-            throw new EventStoreException(ex);
-        }
+        byte[] bytes = EntityMetaData.CONVERTER.toBytes(emd);
+        fileSystem.write(WriteOption.APPEND, bytes, "ENM");
     }
 
     @Override
-    public EntityPageParser getEntityPageParser() {return entityPageParser;}
+    public EntityPageConverter getEntityPageConverter() {return entityPageConverter;}
 
     @Override
-    public void setEntityPageParser(EntityPageParser parser)
+    public void setEntityPageConverter(EntityPageConverter parser)
     {
         if(parser != null)
-            this.entityPageParser = parser;
+            this.entityPageConverter = parser;
     }
     
     @Override
@@ -367,7 +278,7 @@ public class Mk_PageDirectory implements PageDirectory
     {
         int hash = 3;
         hash = 97 * hash + Objects.hashCode(this.entityPages);
-        hash = 97 * hash + Objects.hashCode(this.entityPageParser);
+        hash = 97 * hash + Objects.hashCode(this.entityPageConverter);
         hash = 97 * hash + Objects.hashCode(this.entityNames);
         hash = 97 * hash + Objects.hashCode(this.entityERP);
         hash = 97 * hash + Objects.hashCode(this.pending);
