@@ -46,7 +46,7 @@ public class Mk_PageDirectory implements PageDirectory
     {
         
         List<EntityMetaData> emds = rfs
-                .readAndParseRecursively(EntityMetaData.PARSER, "ENM");
+                .readAndParseRecursively(EntityMetaData.CONVERTER, "ENM");
         
         Map<String, Long> entityNames = new HashMap<>();
         Map<Long, Integer> entityErp = new HashMap<>();
