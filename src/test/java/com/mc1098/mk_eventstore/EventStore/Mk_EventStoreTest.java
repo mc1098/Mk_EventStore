@@ -50,7 +50,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -551,7 +550,7 @@ public class Mk_EventStoreTest
         }
 
         @Override
-        public Transaction poll(long l, TimeUnit tu) throws InterruptedException
+        public Transaction peek()
         {
             return null;
         }
