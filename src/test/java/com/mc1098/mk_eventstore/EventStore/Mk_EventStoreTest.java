@@ -147,7 +147,7 @@ public class Mk_EventStoreTest
         PageDirectory directory = Mk_PageDirectory.setup(rfs, new SimpleEventConverter(), transactionPage);
         EventStore expResult = new Mk_EventStore(directory, transactionPage, null);
         
-        EventStore result = Mk_EventStore.create(directory, transactionPage);
+        EventStore result = Mk_EventStore.create(rfs, directory, transactionPage);
         
         assertEquals(expResult, result);
         assertTrue(transactionLog.exists());
@@ -170,7 +170,7 @@ public class Mk_EventStoreTest
             TransactionConverter parser = new Mk_TransactionConverter();
             TransactionPage transactionPage = new Mk_TransactionPage(transactionLog, parser);
             PageDirectory directory = Mk_PageDirectory.setup(rfs, new SimpleEventConverter(), transactionPage);
-            Mk_EventStore.create(directory, transactionPage);
+            Mk_EventStore.create(rfs, directory, transactionPage);
         }
     }
 
@@ -383,8 +383,8 @@ public class Mk_EventStoreTest
     {
         System.out.println("close");
         
-        TransactionWorker transactionWorker = new Mk_TransactionWorker(new DummyTransactionPage(), 
-                        new DummyPageDirectory(), null);
+        TransactionWorker transactionWorker = new Mk_TransactionWorker(null, 
+                new DummyTransactionPage(), new DummyPageDirectory(), null);
         Mk_EventStore instance = new Mk_EventStore(null, null, transactionWorker);
         transactionWorker.start();
         instance.close();
