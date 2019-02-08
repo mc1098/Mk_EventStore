@@ -32,6 +32,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 
 /**
  *
@@ -57,7 +59,7 @@ public class PageFileSystemTest
     }
     
     @Before
-    public void setUp()
+    public void setUp() throws Exception
     {
         root = "Entity";
     }
@@ -69,7 +71,12 @@ public class PageFileSystemTest
         if(file.exists())
         {
             for (File f : file.listFiles())
+            {
+                if(f.isDirectory())
+                    for (File f2 : f.listFiles())
+                        f2.delete();
                 f.delete();
+            }
             file.delete();
         }
     }
@@ -101,6 +108,60 @@ public class PageFileSystemTest
         PageFileSystem instance = PageFileSystem.ofRoot(path);
         String result = instance.getRootPath();
         assertEquals(expResult, result);
+    }
+    
+    @Test 
+    public void testGetRelativePath() throws Exception
+    {
+        System.out.println("getRelativePath");
+        Path path = Paths.get(root);
+        Path expResult = Paths.get(root, "test");
+        PageFileSystem instance = PageFileSystem.ofRoot(path);
+        Path result = instance.getRelativePath("test");
+        
+        assertEquals(expResult, result);
+    }
+    
+    @Test
+    public void testGetOrCreateDirectory() throws Exception 
+    {
+        System.out.println("getOrCreateDirectory");
+        
+        Path path = Paths.get(root);
+        File expResult = Paths.get(root, "test", "child").toFile();
+        PageFileSystem instance = PageFileSystem.ofRoot(path);
+        File result = instance.getOrCreateDirectory("test", "child");
+        
+        assertEquals(expResult, result);
+    }
+    
+    @Test (expected = FileSystemException.class)
+    public void testGetOrCreateDirectory_WhenFileNotADirectoryExists() 
+            throws Exception
+    {
+        System.out.println("getOrCreateDirectory_WhenFileNotADirectoryExists");
+        
+        Path path = Paths.get(root);
+        File expResult = Paths.get(root, "test", "child").toFile();
+        expResult.getParentFile().mkdirs();
+        expResult.createNewFile();
+        PageFileSystem instance = PageFileSystem.ofRoot(path);
+        instance.getOrCreateDirectory("test", "child");
+    }
+    
+    @Test
+    public void testCreateFile() throws Exception
+    {
+        System.out.println("createFile");
+        
+        Path path = Paths.get(root);
+        File file = Paths.get(root, "test").toFile();
+        
+        PageFileSystem instance = PageFileSystem.ofRoot(path);
+        instance.createFile("test");
+        assertTrue(file.exists());
+        assertTrue(file.isFile());
+        
     }
 
     @Test
@@ -302,7 +363,7 @@ public class PageFileSystemTest
     {
 
         @Override
-        public Byte fromBytes(ByteBuffer buffer) throws ParseException
+        public Byte parse(ByteBuffer buffer) throws ParseException
         {
             throw new ParseException("Intentional exception for testing");
         }
