@@ -16,6 +16,7 @@
  */
 package com.mc1098.mk_eventstore.Transaction;
 
+import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import com.mc1098.mk_eventstore.Exception.TransactionException;
 import java.io.File;
 import java.io.IOException;
@@ -81,7 +82,7 @@ public class Mk_TransactionPageTest
         
         Transaction transaction = new Transaction(TransactionType.PUT_SNAPSHOT, 
                 0, 0, 1, 0, new byte[]{111});
-        TransactionParser parser = new Mk_TransactionParser();
+        TransactionConverter parser = new Mk_TransactionConverter();
         TransactionPage expResult = new Mk_TransactionPage(transactionLogFile, parser);
         expResult.writeTransaction(transaction);
         expResult.refresh();
@@ -99,7 +100,7 @@ public class Mk_TransactionPageTest
     {
         System.out.println("parse_EmptyFile");
         
-        TransactionParser parser = new Mk_TransactionParser();
+        TransactionConverter parser = new Mk_TransactionConverter();
         TransactionPage expResult = new Mk_TransactionPage(transactionLogFile, parser);
         
         byte[] bytes = readFile(transactionLogFile);
@@ -115,7 +116,7 @@ public class Mk_TransactionPageTest
     {
         System.out.println("writeTransaction_HasTransaction");
         Transaction expResult = new Transaction(TransactionType.PUT_EVENT, 0, 0, 1, 0, new byte[]{20, 10});
-        TransactionParser parser = new Mk_TransactionParser();
+        TransactionConverter parser = new Mk_TransactionConverter();
         Mk_TransactionPage instance = new Mk_TransactionPage(transactionLogFile, parser);
         instance.writeTransaction(expResult);
         instance.refresh();
@@ -137,7 +138,7 @@ public class Mk_TransactionPageTest
         List<Transaction> transactions = new ArrayList<>();
         transactions.add(transaction1);
         transactions.add(transaction2);
-        TransactionParser parser = new Mk_TransactionParser();
+        TransactionConverter parser = new Mk_TransactionConverter();
         Mk_TransactionPage instance = new Mk_TransactionPage(transactionLogFile, parser);
         instance.writeTransaction(transactions);
         instance.refresh();
@@ -157,7 +158,7 @@ public class Mk_TransactionPageTest
         System.out.println("poll");
         long l = 2L;
         TimeUnit tu = TimeUnit.SECONDS;
-        TransactionParser parser = new Mk_TransactionParser();
+        TransactionConverter parser = new Mk_TransactionConverter();
         Mk_TransactionPage instance = new Mk_TransactionPage(transactionLogFile, parser);
         Transaction expResult = new Transaction(TransactionType.PUT_SNAPSHOT, 0,
                 0, l, 0, new byte[]{1, 50, 22, 12});
@@ -170,12 +171,12 @@ public class Mk_TransactionPageTest
     }
 
     @Test
-    public void testConfirmTransactionProcessed() throws TransactionException
+    public void testConfirmTransactionProcessed() throws EventStoreException
     {
         System.out.println("confirmTransactionProcessed");
         Transaction transaction = new Transaction(TransactionType.PUT_SNAPSHOT, 
                 0, 0, 1, 0, new byte[]{10});
-        TransactionParser parser = new Mk_TransactionParser();
+        TransactionConverter parser = new Mk_TransactionConverter();
         Mk_TransactionPage instance = new Mk_TransactionPage(transactionLogFile, parser);
         instance.writeTransaction(transaction);
         instance.refresh();
@@ -207,7 +208,7 @@ public class Mk_TransactionPageTest
         System.out.println("truncateLog");
         
         Transaction transaction = new Transaction(TransactionType.PUT_EVENT, 0, 0, 1, 0, new byte[]{33});
-        TransactionParser parser = new Mk_TransactionParser();
+        TransactionConverter parser = new Mk_TransactionConverter();
         Mk_TransactionPage instance = new Mk_TransactionPage(transactionLogFile, parser);
         instance.writeTransaction(transaction);
         byte[] bytes = readFile(transactionLogFile);
@@ -226,7 +227,7 @@ public class Mk_TransactionPageTest
         System.out.println("equals");
         
         File file = testFolder.newFile("test");
-        TransactionParser parser = new Mk_TransactionParser();
+        TransactionConverter parser = new Mk_TransactionConverter();
         Transaction transaction = new Transaction(TransactionType.PUT_SNAPSHOT, 
                 0, 0, 1, 0, new byte[]{10});
         
