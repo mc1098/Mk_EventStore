@@ -17,6 +17,7 @@
 package com.mc1098.mk_eventstore.Transaction;
 
 import com.mc1098.mk_eventstore.Exception.ParseException;
+import com.mc1098.mk_eventstore.Exception.SerializationException;
 import java.nio.ByteBuffer;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -57,14 +58,14 @@ public class Mk_TransactionParserTest
     }
 
     @Test
-    public void testToBytesAndParse() throws ParseException
+    public void testToBytesAndParse() throws Exception
     {
         System.out.println("toBytesAndParse");
         
         Transaction expResult = new Transaction(TransactionType.PUT_EVENT, 0, 1,
                 1, 1, new byte[]{10,20,30});
         
-        TransactionParser parser = new Mk_TransactionParser();
+        TransactionConverter parser = new Mk_TransactionConverter();
         
         byte[] bytes = parser.toBytes(expResult);
         Transaction result = parser.parse(ByteBuffer.wrap(bytes));
@@ -78,7 +79,7 @@ public class Mk_TransactionParserTest
     {
         System.out.println("parse_MalformedBytes");
         
-        TransactionParser parser = new Mk_TransactionParser();
+        TransactionConverter parser = new Mk_TransactionConverter();
         parser.parse(ByteBuffer.wrap(new byte[]{1, 49}));
     }
     
@@ -87,7 +88,7 @@ public class Mk_TransactionParserTest
     {
         System.out.println("parse_MalformedBytes");
         
-        TransactionParser parser = new Mk_TransactionParser();
+        TransactionConverter parser = new Mk_TransactionConverter();
         parser.parse(ByteBuffer.wrap(new byte[]{20, 49}));
     }
 
