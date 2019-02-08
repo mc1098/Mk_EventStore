@@ -226,7 +226,7 @@ public class Mk_PageDirectoryTest
         EntityPage result = instance.getEntityPage(entity, id);
         assertEquals(expResult, result);
         assertTrue(dfs.readAndParseUsed);
-        assertTrue(dfs.getFileUsed);
+        assertTrue(dfs.getDirectoryUsed);
     }
     
     @Test(expected = NoPageFoundException.class)
@@ -237,7 +237,7 @@ public class Mk_PageDirectoryTest
         long entity = 1L;
         long id = 1L;
         DummyFileSystem dfs = new DummyFileSystem();
-        dfs.getFileException = true;
+        dfs.getDirectoryException = true;
         Mk_PageDirectory instance = Mk_PageDirectory.setup(dfs, null, null);
         
         instance.getEntityPage(entity, id);
@@ -434,8 +434,8 @@ public class Mk_PageDirectoryTest
         public List recursiveReturnList = new ArrayList();
         public boolean readAndParseRecursivelyUsed;
         public boolean readAndParseUsed;
-        public boolean getFileUsed;
-        public boolean getFileException;
+        public boolean getDirectoryUsed;
+        public boolean getDirectoryException;
         public boolean createFileUsed;
         public boolean doesFileExistUsed;
         public boolean doesFileExistResult;
@@ -452,6 +452,14 @@ public class Mk_PageDirectoryTest
         {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
+        
+        public File getDirectory(String...strings) throws FileSystemException
+        {
+            if(getDirectoryException)
+                throw new FileSystemException("Intentional test exception");
+            this.getDirectoryUsed = true;
+            return new File("Entity/0/1");
+        }
 
         @Override
         public File getOrCreateDirectory(String... strings) throws FileSystemException
@@ -462,10 +470,7 @@ public class Mk_PageDirectoryTest
         @Override
         public File getFile(String...strings) throws FileSystemException
         {
-            if(getFileException)
-                throw new FileSystemException("Intentional test exception");
-            this.getFileUsed = true;
-            return new File("Entity/0/1");
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
