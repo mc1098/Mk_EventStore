@@ -28,7 +28,6 @@ import com.mc1098.mk_eventstore.Page.EntityPage;
 import com.mc1098.mk_eventstore.Page.PageDirectory;
 import com.mc1098.mk_eventstore.Util.EventStoreUtils;
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -73,12 +72,21 @@ public class Mk_TransactionWorker extends TransactionWorker
             try 
             {
                 processTransactions();
+                synchronized(this)
+                {
+                    wait(5000);
+                }
             } catch(EventStoreException ex)
             {
                 LOGGER.log(Level.SEVERE, "Unrecoverable or possibly data "
                         + "corrupting error has occurred.", ex);
                 getDefaultUncaughtExceptionHandler().uncaughtException(this, ex);
                 break;
+            } catch(InterruptedException ex)
+            {
+                LOGGER.log(Level.SEVERE, "Interruption exception thrown while "
+                    + "waiting for the next transaction.", ex);
+                Thread.currentThread().interrupt();
             }
         }
             
@@ -89,7 +97,7 @@ public class Mk_TransactionWorker extends TransactionWorker
         Transaction transaction = null;
         try
         {
-            transaction = transactionPage.poll(5, TimeUnit.SECONDS);
+            transaction = transactionPage.peek();
             if(transaction == null)
             {
                 transactionPage.truncateLog();
@@ -133,12 +141,12 @@ public class Mk_TransactionWorker extends TransactionWorker
                 Thread.currentThread().interrupt();
             }
         }
-        catch(InterruptedException ex)
-        {
-            LOGGER.log(Level.SEVERE, "Interruption exception thrown while "
-                    + "waiting for the next transaction.", ex);
-            Thread.currentThread().interrupt();
-        }
+//        catch(InterruptedException ex)
+//        {
+//            LOGGER.log(Level.SEVERE, "Interruption exception thrown while "
+//                    + "waiting for the next transaction.", ex);
+//            Thread.currentThread().interrupt();
+//        }
     }
 
     private void processSnapshotTransaction(long entity, long entityId, 
@@ -166,8 +174,11 @@ public class Mk_TransactionWorker extends TransactionWorker
         EntityPage page = directory.getEntityPage(entity, entityId,
                 expPageId);
         if (page.getCleanVersion() > transaction.getVersion())
+        {
             transactionPage.confirmTransactionProcessed(transaction); //already been saved
-        else if(page.getCleanVersion() < transaction.getVersion() ||
+            return;
+        }
+        if(page.getCleanVersion() < transaction.getVersion() ||
                 page.getSnapshot().getVersion() == transaction.getVersion())
         {
             if(page.getVersion() <= transaction.getVersion())
@@ -219,6 +230,10 @@ public class Mk_TransactionWorker extends TransactionWorker
     public void stopAfterTransaction() throws InterruptedException
     {
         run.set(false);
+        synchronized(this)
+        {
+            notifyAll();
+        }
     }
     
 }
