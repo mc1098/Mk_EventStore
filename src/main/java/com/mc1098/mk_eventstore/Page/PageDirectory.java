@@ -43,5 +43,4 @@ public interface PageDirectory
     public EntityPage confirmPendingPage(EntityPage page) throws EventStoreException;
     public TransactionPage getTransactionPage();
     public EntityPageConverter getEntityPageConverter();
-    public void setEntityPageConverter(EntityPageConverter parser);
 }
