@@ -18,7 +18,6 @@ package com.mc1098.mk_eventstore.Transaction;
 
 import com.mc1098.mk_eventstore.Exception.EventStoreError;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
-import com.mc1098.mk_eventstore.Exception.ParseException;
 import com.mc1098.mk_eventstore.Exception.TransactionException;
 import java.io.File;
 import java.io.IOException;
@@ -32,7 +31,6 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
