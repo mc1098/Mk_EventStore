@@ -55,6 +55,21 @@ public interface RelativeFileSystem
     public Path getRelativePath(String...strings);
     
     /**
+     * Returns a {@link File} object at the path given relative to the root 
+     * directory only if a directory already exists at this path.
+     * 
+     * The method guarantees that the directory exists on the system, or did at 
+     * the time of this method.
+     * 
+     * @param strings to be joined after the root directory to create a path.
+     * @return Retrieves a {@link File} object at the path given relative to the 
+     * root directory only if this directory already exists at this path.
+     * @throws FileSystemException If the directory does not exist at this path or
+     * the File object references a directory.
+     */
+    public File getDirectory(String...strings) throws FileSystemException;
+    
+    /**
      * Returns a directory File object which is guaranteed to exist at the path 
      * relative to the root directory.
      * This function will either retrieve a directory that already exists or will 
