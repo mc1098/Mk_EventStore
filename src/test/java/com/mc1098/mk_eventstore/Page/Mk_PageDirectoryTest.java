@@ -18,7 +18,6 @@ package com.mc1098.mk_eventstore.Page;
 
 import com.mc1098.mk_eventstore.Entity.Mk_Snapshot;
 import com.mc1098.mk_eventstore.Entity.Snapshot;
-import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import com.mc1098.mk_eventstore.Exception.TransactionException;
 import com.mc1098.mk_eventstore.FileSystem.PageFileSystem;
 import com.mc1098.mk_eventstore.FileSystem.RelativeFileSystem;
@@ -31,7 +30,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -368,7 +366,7 @@ public class Mk_PageDirectoryTest
         }
 
         @Override
-        public Transaction poll(long l, TimeUnit tu) throws InterruptedException
+        public Transaction peek()
         {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
