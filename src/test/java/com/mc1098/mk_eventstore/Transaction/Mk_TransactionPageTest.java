@@ -116,9 +116,9 @@ public class Mk_TransactionPageTest
     }
     
     @Test
-    public void testPoll() throws Exception
+    public void testPeek() throws Exception
     {
-        System.out.println("poll");
+        System.out.println("peek");
         long l = 2L;
         TimeUnit tu = TimeUnit.SECONDS;
         TransactionConverter parser = new Mk_TransactionConverter();
@@ -129,7 +129,7 @@ public class Mk_TransactionPageTest
         instance.writeTransaction(expResult);
         instance.refresh(); //refresh called to confirm pending to be added to transaction queue.
         
-        Transaction result = instance.poll(l, tu);
+        Transaction result = instance.peek();
         assertEquals(expResult, result);
     }
 
