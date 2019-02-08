@@ -516,11 +516,6 @@ public class Mk_EventStoreTest
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
-        @Override
-        public void setEntityPageConverter(EntityPageConverter parser)
-        {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
         
     }
     
