@@ -18,22 +18,14 @@ package com.mc1098.mk_eventstore.Transaction;
 
 import com.mc1098.mk_eventstore.Entity.Mk_Snapshot;
 import com.mc1098.mk_eventstore.Entity.Snapshot;
-import com.mc1098.mk_eventstore.Event.Event;
-import com.mc1098.mk_eventstore.Event.EventFormat;
-import com.mc1098.mk_eventstore.Event.Mk_Event;
-import com.mc1098.mk_eventstore.Event.SimpleEventFormat;
+import com.mc1098.mk_eventstore.Event.SimpleEventConverter;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import com.mc1098.mk_eventstore.Exception.TransactionException;
 import com.mc1098.mk_eventstore.Page.EntityPage;
-import com.mc1098.mk_eventstore.Page.EntityPageParser;
 import com.mc1098.mk_eventstore.Page.Mk_EntityPage;
-import com.mc1098.mk_eventstore.Page.Mk_EntityPageParser;
+import com.mc1098.mk_eventstore.Page.Mk_EntityPageConverter;
 import com.mc1098.mk_eventstore.Page.PageDirectory;
-import com.mc1098.mk_eventstore.Util.EventStoreUtils;
-import java.io.File;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
@@ -42,9 +34,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
-import org.w3c.dom.events.EventException;
+import com.mc1098.mk_eventstore.Page.EntityPageConverter;
+import com.mc1098.mk_eventstore.Event.EventConverter;
 
 /**
  *
@@ -105,8 +96,8 @@ public class Mk_TransactionWorkerTest
         
         DummyTransactionPage dtp = new DummyTransactionPage(transaction);
         DummyPageDirectory dpd = new DummyPageDirectory();
-        EventFormat ef = new SimpleEventFormat();
-        EntityPageParser parser = new Mk_EntityPageParser(dpd, ef);
+        EventConverter ef = new SimpleEventConverter();
+        EntityPageConverter parser = new Mk_EntityPageConverter(dpd, ef);
         
         Mk_TransactionWorker instance = new Mk_TransactionWorker(dtp, dpd, parser);
         instance.flush();
@@ -145,8 +136,8 @@ public class Mk_TransactionWorkerTest
         DummyTransactionPage dtp = new DummyTransactionPage(transaction);
         DummyPageDirectory dpd = new DummyPageDirectory();
         dpd.page = page;
-        EventFormat ef = new SimpleEventFormat();
-        EntityPageParser parser = new Mk_EntityPageParser(dpd, ef);
+        EventConverter ef = new SimpleEventConverter();
+        EntityPageConverter parser = new Mk_EntityPageConverter(dpd, ef);
         
         Mk_TransactionWorker instance = new Mk_TransactionWorker(dtp, dpd, parser);
         instance.flush();
@@ -177,8 +168,8 @@ public class Mk_TransactionWorkerTest
         DummyTransactionPage dtp = new DummyTransactionPage(transaction);
         DummyPageDirectory dpd = new DummyPageDirectory();
         dpd.page = page;
-        EventFormat ef = new SimpleEventFormat();
-        EntityPageParser parser = new Mk_EntityPageParser(dpd, ef);
+        EventConverter ef = new SimpleEventConverter();
+        EntityPageConverter parser = new Mk_EntityPageConverter(dpd, ef);
         
         Mk_TransactionWorker instance = new Mk_TransactionWorker(dtp, dpd, parser);
         instance.flush();
@@ -340,13 +331,13 @@ public class Mk_TransactionWorkerTest
         }
 
         @Override
-        public EntityPageParser getEntityPageParser()
+        public EntityPageConverter getEntityPageConverter()
         {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
         @Override
-        public void setEntityPageParser(EntityPageParser parser)
+        public void setEntityPageConverter(EntityPageConverter parser)
         {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
