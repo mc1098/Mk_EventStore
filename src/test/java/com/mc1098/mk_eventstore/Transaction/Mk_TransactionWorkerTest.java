@@ -27,7 +27,6 @@ import com.mc1098.mk_eventstore.Page.Mk_EntityPageConverter;
 import com.mc1098.mk_eventstore.Page.PageDirectory;
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -224,7 +223,7 @@ public class Mk_TransactionWorkerTest
         }
 
         @Override
-        public Transaction poll(long l, TimeUnit tu) throws InterruptedException
+        public Transaction peek()
         {
             return transaction;
         }
