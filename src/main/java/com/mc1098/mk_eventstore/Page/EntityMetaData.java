@@ -22,6 +22,7 @@ import com.mc1098.mk_eventstore.FileSystem.ByteParser;
 import com.mc1098.mk_eventstore.FileSystem.ByteSerializer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  *
@@ -30,32 +31,6 @@ import java.nio.charset.StandardCharsets;
 public class EntityMetaData
 {
     public static final EntityMetaDataConverter CONVERTER = new EntityMetaDataConverter();
-    
-    private final String name;
-    private final long entity;
-    private final int erp;
-    
-    public EntityMetaData(String name, long entity, int erp)
-    {
-        this.name = name;
-        this.entity = entity;
-        this.erp = erp;
-    }
-
-    public String getName()
-    {
-        return name;
-    }
-
-    public long getEntity()
-    {
-        return entity;
-    }
-
-    public int getErp()
-    {
-        return erp;
-    }
     
     public static class EntityMetaDataConverter implements ByteParser<EntityMetaData>, 
             ByteSerializer<EntityMetaData>
@@ -86,6 +61,55 @@ public class EntityMetaData
             return buffer.array();
         }
         
+    }
+    
+    private final String name;
+    private final long entity;
+    private final int erp;
+    
+    public EntityMetaData(String name, long entity, int erp)
+    {
+        this.name = name;
+        this.entity = entity;
+        this.erp = erp;
+    }
+
+    public String getName()
+    {
+        return name;
+    }
+
+    public long getEntity()
+    {
+        return entity;
+    }
+
+    public int getErp()
+    {
+        return erp;
+    }
+    
+    @Override
+    public boolean equals(Object o)
+    {
+        if(!(o instanceof EntityMetaData))
+            return false;
+        
+        EntityMetaData emd = (EntityMetaData)o;
+        
+        return (this.name.equals(emd.name) && 
+                this.entity == emd.entity && 
+                this.erp == emd.erp);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int hash = 7;
+        hash = 53 * hash + Objects.hashCode(this.name);
+        hash = 53 * hash + (int) (this.entity ^ (this.entity >>> 32));
+        hash = 53 * hash + this.erp;
+        return hash;
     }
     
     
