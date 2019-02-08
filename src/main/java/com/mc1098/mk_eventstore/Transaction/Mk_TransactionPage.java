@@ -16,6 +16,7 @@
  */
 package com.mc1098.mk_eventstore.Transaction;
 
+import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import com.mc1098.mk_eventstore.Exception.ParseException;
 import com.mc1098.mk_eventstore.Exception.TransactionException;
 import java.io.File;
@@ -43,23 +44,12 @@ public class Mk_TransactionPage implements TransactionPage
     
     private static final Logger LOGGER = Logger.getLogger(Mk_TransactionPage.class.getName());
     
-    public static TransactionPage parse(File file, ByteBuffer buffer, 
-            TransactionParser transactionParser) throws ParseException
-    {
-        buffer.rewind();
-        Queue<Transaction> transactions = new ArrayDeque<>();
-        while (buffer.hasRemaining())
-            transactions.add(transactionParser.parse(buffer));
-        
-        return new Mk_TransactionPage(transactions, file, transactionParser);
-    }
-    
     private final BlockingQueue<Transaction> transactions;
     private final Queue<Transaction> pending;
-    private final TransactionParser parser;
+    private final TransactionConverter parser;
     private final File file;
     
-    public Mk_TransactionPage(File file, TransactionParser parser)
+    public Mk_TransactionPage(File file, TransactionConverter parser)
     {
         this.transactions = new ArrayBlockingQueue(200, true);
         this.pending = new ArrayDeque<>();
@@ -67,8 +57,8 @@ public class Mk_TransactionPage implements TransactionPage
         this.file = file;
     }
     
-    private Mk_TransactionPage(Queue<Transaction> transactions, File file, 
-            TransactionParser parser)
+    public Mk_TransactionPage(Queue<Transaction> transactions, File file, 
+            TransactionConverter parser)
     {
         this.transactions = new ArrayBlockingQueue<>(200, true, transactions);
         this.pending = new ArrayDeque<>();
@@ -77,7 +67,7 @@ public class Mk_TransactionPage implements TransactionPage
     }
 
     @Override
-    public void writeTransaction(Transaction transaction) throws TransactionException
+    public void writeTransaction(Transaction transaction) throws EventStoreException
     {
         ByteBuffer buffer = ByteBuffer.wrap(parser.toBytes(transaction));
         writeBytes(buffer);
@@ -86,7 +76,7 @@ public class Mk_TransactionPage implements TransactionPage
 
     @Override
     public void writeTransaction(List<Transaction> transactions) 
-            throws TransactionException
+            throws EventStoreException
     {
         int size = 0;
         byte[][] arryBytes = new byte[transactions.size()][0];
