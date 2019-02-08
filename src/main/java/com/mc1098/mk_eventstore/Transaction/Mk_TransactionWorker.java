@@ -141,12 +141,6 @@ public class Mk_TransactionWorker extends TransactionWorker
                 Thread.currentThread().interrupt();
             }
         }
-//        catch(InterruptedException ex)
-//        {
-//            LOGGER.log(Level.SEVERE, "Interruption exception thrown while "
-//                    + "waiting for the next transaction.", ex);
-//            Thread.currentThread().interrupt();
-//        }
     }
 
     private void processSnapshotTransaction(long entity, long entityId, 
