@@ -22,19 +22,17 @@ import com.mc1098.mk_eventstore.Event.Event;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import com.mc1098.mk_eventstore.Exception.NoPageFoundException;
 import com.mc1098.mk_eventstore.Exception.SerializationException;
+import com.mc1098.mk_eventstore.FileSystem.RelativeFileSystem;
+import com.mc1098.mk_eventstore.FileSystem.WriteOption;
 import com.mc1098.mk_eventstore.Page.EntityPage;
-import com.mc1098.mk_eventstore.Page.EntityPageParser;
 import com.mc1098.mk_eventstore.Page.PageDirectory;
 import com.mc1098.mk_eventstore.Util.EventStoreUtils;
-import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.StandardOpenOption;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import com.mc1098.mk_eventstore.Page.EntityPageConverter;
 
 /**
  *
@@ -46,14 +44,17 @@ public class Mk_TransactionWorker extends TransactionWorker
     public static final Logger LOGGER = Logger
         .getLogger(TransactionWorker.class.getName());
     
+    private final RelativeFileSystem fileSystem;
     private final PageDirectory directory;
     private final TransactionPage transactionPage;
-    private final EntityPageParser entityPageParser;
+    private final EntityPageConverter entityPageParser;
     private final AtomicBoolean run;
     
-    public Mk_TransactionWorker(TransactionPage transactionPage, 
-            PageDirectory directory, EntityPageParser parser)
+    public Mk_TransactionWorker(RelativeFileSystem rfs, 
+            TransactionPage transactionPage, PageDirectory directory, 
+            EntityPageConverter parser)
     {
+        this.fileSystem = rfs;
         this.transactionPage = transactionPage;
         this.directory = directory;
         this.entityPageParser = parser;
@@ -165,12 +166,8 @@ public class Mk_TransactionWorker extends TransactionWorker
         EntityPage page = directory.getEntityPage(entity, entityId,
                 expPageId);
         if (page.getCleanVersion() > transaction.getVersion())
-        {
-            //already been saved
-            transactionPage.confirmTransactionProcessed(transaction);
-            return;
-        }
-        if(page.getCleanVersion() < transaction.getVersion() ||
+            transactionPage.confirmTransactionProcessed(transaction); //already been saved
+        else if(page.getCleanVersion() < transaction.getVersion() ||
                 page.getSnapshot().getVersion() == transaction.getVersion())
         {
             if(page.getVersion() <= transaction.getVersion())
@@ -179,29 +176,15 @@ public class Mk_TransactionWorker extends TransactionWorker
             byte[] bytes = entityPageParser.toBytes(page);
             if(version == page.getCleanVersion())
             {
-                writePage(page, bytes);
+                fileSystem.write(WriteOption.WRITE, bytes, 
+                        Long.toHexString(page.getEntity()),
+                        Long.toHexString(page.getEntityId()), 
+                        Long.toHexString(page.getPageId()));
                 transactionPage.confirmTransactionProcessed(transaction);
             }
         }
         else
             transactionPage.confirmTransactionProcessed(transaction);
-    }
-
-    private void writePage(EntityPage page, byte[] bytes)  throws EventStoreException
-    {
-        File file = new File(String.format("./Entity/%s/%s/%s",  
-                Long.toHexString(page.getEntity()), 
-                Long.toHexString(page.getEntityId()), 
-                Long.toHexString(page.getPageId())));
-                
-        
-        try(FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.WRITE);)
-        {
-            fc.write(ByteBuffer.wrap(bytes));
-        } catch(IOException ex)
-        {
-            throw new EventStoreException("Failed to write Entity Page.", ex);
-        }
     }
 
     private void addEventToPage(EntityPage page, Transaction transaction) 
