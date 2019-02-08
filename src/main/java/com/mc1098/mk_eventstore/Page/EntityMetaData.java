@@ -31,17 +31,6 @@ public class EntityMetaData
 {
     public static final EntityMetaDataConverter CONVERTER = new EntityMetaDataConverter();
     
-    public static final ByteParser<EntityMetaData> PARSER = (b) -> 
-    {
-        long entity = b.getLong();
-        int erp = b.getInt();
-        int nameSize = b.getInt();
-        byte[] nameBytes = new byte[nameSize];
-        b.get(nameBytes);
-        String name = new String(nameBytes, StandardCharsets.UTF_8);
-        return new EntityMetaData(name, entity, erp);
-    };
-    
     private final String name;
     private final long entity;
     private final int erp;
