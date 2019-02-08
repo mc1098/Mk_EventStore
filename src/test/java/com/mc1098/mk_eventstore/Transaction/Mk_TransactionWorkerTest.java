@@ -77,7 +77,7 @@ public class Mk_TransactionWorkerTest
         
         DummyTransactionPage dtp = new DummyTransactionPage(transaction);
         DummyPageDirectory dpd = null;
-        Mk_TransactionWorker instance = new Mk_TransactionWorker(dtp, dpd, null);
+        Mk_TransactionWorker instance = new Mk_TransactionWorker(null, dtp, dpd, null);
         instance.flush();
         
         assertTrue("Expect truncate log to be called when null transaction is "
@@ -99,7 +99,7 @@ public class Mk_TransactionWorkerTest
         EventConverter ef = new SimpleEventConverter();
         EntityPageConverter parser = new Mk_EntityPageConverter(dpd, ef);
         
-        Mk_TransactionWorker instance = new Mk_TransactionWorker(dtp, dpd, parser);
+        Mk_TransactionWorker instance = new Mk_TransactionWorker(null, dtp, dpd, parser);
         instance.flush();
         
         assertEquals("Expect transaction confirmed to be equal to the one loaded"
@@ -139,7 +139,7 @@ public class Mk_TransactionWorkerTest
         EventConverter ef = new SimpleEventConverter();
         EntityPageConverter parser = new Mk_EntityPageConverter(dpd, ef);
         
-        Mk_TransactionWorker instance = new Mk_TransactionWorker(dtp, dpd, parser);
+        Mk_TransactionWorker instance = new Mk_TransactionWorker(null, dtp, dpd, parser);
         instance.flush();
         
         assertEquals(transaction, dtp.transaction);
@@ -171,7 +171,7 @@ public class Mk_TransactionWorkerTest
         EventConverter ef = new SimpleEventConverter();
         EntityPageConverter parser = new Mk_EntityPageConverter(dpd, ef);
         
-        Mk_TransactionWorker instance = new Mk_TransactionWorker(dtp, dpd, parser);
+        Mk_TransactionWorker instance = new Mk_TransactionWorker(null, dtp, dpd, parser);
         instance.flush();
         
     }
@@ -183,7 +183,7 @@ public class Mk_TransactionWorkerTest
     public void testStopAfterTransaction() throws Exception
     {
         System.out.println("stopAfterTransaction");
-        Mk_TransactionWorker instance = new Mk_TransactionWorker(null, null, null);
+        Mk_TransactionWorker instance = new Mk_TransactionWorker(null, null, null, null);
         instance.stopAfterTransaction();
         assertTrue(instance.isShuttingDown());
     }
