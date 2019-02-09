@@ -258,4 +258,12 @@ public interface RelativeFileSystem
     public <T> void serializeAndWrite(WriteOption wo, 
             ByteSerializer<T> serializer, List<T> list, 
             String...strings) throws FileSystemException, SerializationException;
+    
+    /**
+     * Truncates to zero on the file at the given path relative to the root directory.
+     * @param strings to be joined after the root directory to create a path.
+     * @throws FileSystemException If the file does not exists or an error 
+     * occurs while truncating the file.
+     */
+    public void truncateFile(String...strings) throws FileSystemException;
 }
