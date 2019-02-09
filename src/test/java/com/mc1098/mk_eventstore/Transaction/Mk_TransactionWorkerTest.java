@@ -43,6 +43,7 @@ import com.mc1098.mk_eventstore.FileSystem.RelativeFileSystem;
 import com.mc1098.mk_eventstore.FileSystem.WriteOption;
 import java.io.File;
 import java.nio.file.Path;
+import java.util.function.Consumer;
 
 /**
  *
@@ -305,18 +306,6 @@ public class Mk_TransactionWorkerTest
         }
 
         @Override
-        public List<EntityPage> getEntityPages(long entity, long id, long pageFrom) throws EventStoreException
-        {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public List<EntityPage> getEntityPages(long entity, long id, long pageNo, long pageNo1) throws EventStoreException
-        {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
         public EntityPage createPendingEntityPage(long entity, long id, long pageNo, Snapshot snapshot)
         {
             this.wasCreatePendingUsed = true;
@@ -340,6 +329,18 @@ public class Mk_TransactionWorkerTest
 
         @Override
         public EntityPageConverter getEntityPageConverter()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void consumeEntityPages(long entity, long id, long fromPage, Consumer<EntityPage> cnsmr) throws EventStoreException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void consumeEntityPages(long entity, long id, long fromPage, long toPage, Consumer<EntityPage> cnsmr) throws EventStoreException
         {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
