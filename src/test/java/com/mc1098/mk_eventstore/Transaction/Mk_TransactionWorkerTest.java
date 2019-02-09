@@ -25,7 +25,6 @@ import com.mc1098.mk_eventstore.Page.EntityPage;
 import com.mc1098.mk_eventstore.Page.Mk_EntityPage;
 import com.mc1098.mk_eventstore.Page.Mk_EntityPageConverter;
 import com.mc1098.mk_eventstore.Page.PageDirectory;
-import java.io.IOException;
 import java.util.List;
 import org.junit.After;
 import org.junit.AfterClass;
