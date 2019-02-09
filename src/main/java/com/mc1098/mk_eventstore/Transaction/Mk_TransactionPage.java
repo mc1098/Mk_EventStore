@@ -16,14 +16,9 @@
  */
 package com.mc1098.mk_eventstore.Transaction;
 
-import com.mc1098.mk_eventstore.Exception.EventStoreError;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
-import com.mc1098.mk_eventstore.Exception.TransactionException;
-import java.io.File;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.StandardOpenOption;
+import com.mc1098.mk_eventstore.FileSystem.RelativeFileSystem;
+import com.mc1098.mk_eventstore.FileSystem.WriteOption;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.List;
@@ -31,6 +26,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,69 +39,54 @@ public class Mk_TransactionPage implements TransactionPage
     
     private static final Logger LOGGER = Logger.getLogger(Mk_TransactionPage.class.getName());
     
+    private final AtomicBoolean truncatePending;
+    private final RelativeFileSystem fileSystem;
     private final BlockingQueue<Transaction> transactions;
     private final Queue<Transaction> pending;
     private final TransactionConverter parser;
-    private final File file;
+    private final String file = "TL";
     
-    public Mk_TransactionPage(File file, TransactionConverter parser)
+    public Mk_TransactionPage(RelativeFileSystem rfs, 
+            TransactionConverter parser)
     {
+        this.truncatePending = new AtomicBoolean();
+        this.fileSystem = rfs;
         this.transactions = new ArrayBlockingQueue(200, true);
         this.pending = new ArrayDeque<>();
         this.parser = parser;
-        this.file = file;
     }
     
-    public Mk_TransactionPage(Queue<Transaction> transactions, File file, 
-            TransactionConverter parser)
+    public Mk_TransactionPage(RelativeFileSystem rfs, 
+            Queue<Transaction> transactions, TransactionConverter parser)
     {
+        this.truncatePending = new AtomicBoolean();
+        this.fileSystem = rfs;
         this.transactions = new ArrayBlockingQueue<>(200, true, transactions);
         this.pending = new ArrayDeque<>();
         this.parser = parser;
-        this.file = file;
     }
 
     @Override
     public void writeTransaction(Transaction transaction) throws EventStoreException
     {
-        ByteBuffer buffer = ByteBuffer.wrap(parser.toBytes(transaction));
-        writeBytes(buffer);
+        if(truncatePending.get())
+            fileSystem.truncateFile(file);
+        byte[] bytes = parser.toBytes(transaction);
+        fileSystem.write(WriteOption.APPEND, bytes, file);
         pending.add(transaction);
+        truncatePending.set(false);
     }
 
     @Override
     public void writeTransaction(List<Transaction> transactions) 
             throws EventStoreException
     {
-        int size = 0;
-        byte[][] arryBytes = new byte[transactions.size()][0];
-        for (int i = 0; i < transactions.size(); i++)
-        {
-            byte[] bytes = parser.toBytes(transactions.get(i));
-            size += bytes.length;
-            arryBytes[i] = bytes;
-        }
-        
-        ByteBuffer buffer = ByteBuffer.allocate(size);
-        for (byte[] bytes : arryBytes)
-            buffer.put(bytes);
-        
-        writeBytes(buffer);
+        if(truncatePending.get())
+            fileSystem.truncateFile(file);
+        fileSystem.serializeAndWrite(WriteOption.APPEND, parser, transactions, 
+                file);
         this.pending.addAll(transactions);
-    }
-    
-    private synchronized void writeBytes(ByteBuffer buffer) 
-            throws TransactionException
-    {
-        try (FileChannel fc = FileChannel.open(file.toPath(), 
-                StandardOpenOption.APPEND))
-        {
-            buffer.rewind();
-            fc.write(buffer);
-        } catch(IOException ex)
-        {
-            throw new TransactionException(ex);
-        }
+        truncatePending.set(false);
     }
     
     @Override
@@ -126,16 +107,9 @@ public class Mk_TransactionPage implements TransactionPage
     }
     
     @Override
-    public void truncateLog() throws IOException
+    public void truncateLog()
     {
-        if(!file.exists())
-            throw new EventStoreError("No Transaction file exists");
-        try(FileChannel fc = FileChannel.open(file.toPath(), 
-                StandardOpenOption.WRITE))
-        {
-            if(fc.size() != 0)
-                fc.truncate(0);
-        }
+        truncatePending.set(true);
     }
     
     @Override
@@ -154,8 +128,7 @@ public class Mk_TransactionPage implements TransactionPage
         Mk_TransactionPage tp = (Mk_TransactionPage)o;
         
         //blockingQueue#equals was return false despite both queues containing same 
-        return (Arrays.equals(transactions.toArray(), tp.transactions.toArray()) &&
-                this.file.getPath().equals(tp.file.getPath()));
+        return Arrays.equals(transactions.toArray(), tp.transactions.toArray());
     }
 
     @Override
@@ -163,7 +136,6 @@ public class Mk_TransactionPage implements TransactionPage
     {
         int hash = 3;
         hash = 13 * hash + Objects.hashCode(this.transactions);
-        hash = 13 * hash + Objects.hashCode(this.file);
         return hash;
     }
     
