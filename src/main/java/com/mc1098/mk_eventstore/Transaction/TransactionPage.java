@@ -19,7 +19,6 @@ package com.mc1098.mk_eventstore.Transaction;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  *
