@@ -32,7 +32,6 @@ import com.mc1098.mk_eventstore.Transaction.Transaction;
 import com.mc1098.mk_eventstore.Transaction.TransactionBuilder;
 import com.mc1098.mk_eventstore.Transaction.TransactionPage;
 import com.mc1098.mk_eventstore.Transaction.TransactionWorker;
-import java.io.File;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
