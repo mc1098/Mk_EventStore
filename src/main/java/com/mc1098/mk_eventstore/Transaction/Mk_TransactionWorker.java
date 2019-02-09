@@ -20,6 +20,7 @@ import com.mc1098.mk_eventstore.Entity.Mk_Snapshot;
 import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Event.Event;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
+import com.mc1098.mk_eventstore.Exception.FileSystem.FileSystemException;
 import com.mc1098.mk_eventstore.Exception.NoPageFoundException;
 import com.mc1098.mk_eventstore.Exception.SerializationException;
 import com.mc1098.mk_eventstore.FileSystem.RelativeFileSystem;
@@ -27,7 +28,6 @@ import com.mc1098.mk_eventstore.FileSystem.WriteOption;
 import com.mc1098.mk_eventstore.Page.EntityPage;
 import com.mc1098.mk_eventstore.Page.PageDirectory;
 import com.mc1098.mk_eventstore.Util.EventStoreUtils;
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -123,11 +123,7 @@ public class Mk_TransactionWorker extends TransactionWorker
                             transaction.getType().name()));
             }     
             
-        } catch (IOException ex)
-        {
-            LOGGER.log(Level.INFO, "Transaction worker was unable to truncate "
-                    + "the transaction log.", ex);
-        } catch(NoPageFoundException ex)
+        }catch(NoPageFoundException ex)
         {
             if(!run.get())
                 LOGGER.log(Level.INFO, "Transaction was unable to be processed "
@@ -213,9 +209,10 @@ public class Mk_TransactionWorker extends TransactionWorker
         {
             while(transactionPage.hasTransaction())
                 processTransactions();
-            transactionPage.truncateLog();
-        } catch(IOException ex)
+            fileSystem.truncateFile("TL");
+        } catch(FileSystemException ex)
         {
+            LOGGER.log(Level.WARNING, "Unable to truncate the Transaction Log after flushing the pending transactions", ex);
             throw new EventStoreException(ex);
         }
     }
