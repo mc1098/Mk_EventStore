@@ -32,8 +32,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
 
 /**
  *
@@ -96,7 +94,7 @@ public class PageFileSystemTest
     {
         System.out.println("ofRoot_AbsolutePath");
         Path path = Paths.get(root).toAbsolutePath();
-        PageFileSystem result = PageFileSystem.ofRoot(path);
+        PageFileSystem.ofRoot(path);
     }
     
     @Test
@@ -120,6 +118,44 @@ public class PageFileSystemTest
         Path result = instance.getRelativePath("test");
         
         assertEquals(expResult, result);
+    }
+    
+    @Test
+    public void testGetDirectory() throws Exception
+    {
+        System.out.println("getDirectory");
+        
+        Path path = Paths.get(root);
+        PageFileSystem instance = PageFileSystem.ofRoot(path);
+        File expResult = Paths.get(root, "test").toFile();
+        expResult.mkdir();
+        File result = instance.getDirectory("test");
+        
+        assertEquals(expResult, result);
+        assertTrue(result.isDirectory());
+        assertTrue(result.exists());
+    }
+    
+    @Test(expected = FileSystemException.class)
+    public void testGetDirectory_DoesNotExist() throws Exception
+    {
+        System.out.println("getDirectory_DoesNotExist");
+        
+        Path path = Paths.get(root);
+        PageFileSystem instance = PageFileSystem.ofRoot(path);
+        instance.getDirectory("test");
+    }
+    
+    @Test(expected = FileSystemException.class)
+    public void testGetDirectory_ExistsAsFile() throws Exception
+    {
+        System.out.println("getDirectory_ExistsAsFile");
+        
+        Path path = Paths.get(root);
+        PageFileSystem instance = PageFileSystem.ofRoot(path);
+        File expResult = Paths.get(root, "test").toFile();
+        expResult.createNewFile();
+        instance.getDirectory("test");
     }
     
     @Test
@@ -150,6 +186,44 @@ public class PageFileSystemTest
     }
     
     @Test
+    public void testGetFile() throws Exception
+    {
+        System.out.println("getFile");
+        
+        Path path = Paths.get(root);
+        PageFileSystem instance = PageFileSystem.ofRoot(path);
+        File expResult = Paths.get(root, "test").toFile();
+        expResult.createNewFile();
+        File result = instance.getFile("test");
+        
+        assertEquals(expResult, result);
+        assertTrue(result.isFile());
+        assertTrue(result.exists());
+    }
+    
+    @Test(expected = FileSystemException.class)
+    public void testGetFile_DoesNotExist() throws Exception
+    {
+        System.out.println("getFile_DoesNotExist");
+        
+        Path path = Paths.get(root);
+        PageFileSystem instance = PageFileSystem.ofRoot(path);
+        instance.getFile("test");
+    }
+    
+    @Test (expected = FileSystemException.class)
+    public void testGetFile_ExistsAsDir() throws Exception
+    {
+        System.out.println("getFile_ExistsAsDir");
+        
+        Path path = Paths.get(root);
+        PageFileSystem instance = PageFileSystem.ofRoot(path);
+        File expResult = Paths.get(root, "test").toFile();
+        expResult.mkdir();
+        instance.getFile("test");
+    }
+    
+    @Test
     public void testCreateFile() throws Exception
     {
         System.out.println("createFile");
@@ -161,7 +235,32 @@ public class PageFileSystemTest
         instance.createFile("test");
         assertTrue(file.exists());
         assertTrue(file.isFile());
+    }
+    
+    @Test
+    public void testCreateFile_AlreadyExists() throws Exception
+    {
+        System.out.println("createFile_AlreadyExists");
         
+        Path path = Paths.get(root);
+        File file = Paths.get(root, "test").toFile();
+        PageFileSystem instance = PageFileSystem.ofRoot(path);
+        file.createNewFile();
+        instance.createFile("test");
+        assertTrue(file.exists());
+        assertTrue(file.isFile());
+    }
+    
+    @Test(expected = FileSystemException.class)
+    public void testCreateFile_ExistsAsDir() throws Exception
+    {
+        System.out.println("createFile_ExistsAsDir");
+        
+        Path path = Paths.get(root);
+        File file = Paths.get(root, "test").toFile();
+        file.mkdirs();
+        PageFileSystem instance = PageFileSystem.ofRoot(path);
+        instance.createFile("test");
     }
 
     @Test
@@ -265,9 +364,28 @@ public class PageFileSystemTest
     }
     
     @Test 
-    public void testSerializeAndWriteAndReadAndParse() throws Exception
+    public void testWriteAndReadAndParse() throws Exception
     {
         System.out.println("serializeAndWriteAndReadAndParse");
+        
+        PageFileSystem instance = PageFileSystem.ofRoot(Paths.get(root));
+        String path = "test";
+        File file = Paths.get(root, path).toFile();
+        file.getParentFile().mkdir();
+        file.createNewFile();
+       
+        byte[] expResult = new byte[]{10, 20};
+        instance.write(WriteOption.WRITE, expResult, "test");
+        //redundant parser but easily shows this process.
+        byte[] result = instance.readAndParse((ByteBuffer b)-> b.array(), "test");
+        
+        assertArrayEquals(expResult, result);
+    }
+    
+    @Test 
+    public void testSerializeAndWriteAndReadAndParseRecursive() throws Exception
+    {
+        System.out.println("serializeAndWriteAndReadAndParseRecursive");
         
         PageFileSystem instance = PageFileSystem.ofRoot(Paths.get(root));
         String path = "test";
