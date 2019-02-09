@@ -394,7 +394,7 @@ public class Mk_PageDirectoryTest
     {
         System.out.println("getTransactionPage");
         
-        TransactionPage expResult = new Mk_TransactionPage(new File("Entity/TL"), 
+        TransactionPage expResult = new Mk_TransactionPage(null, 
                         new Mk_TransactionConverter());
         Mk_PageDirectory instance = new Mk_PageDirectory(null, null, 
                 expResult, null, null);
@@ -409,7 +409,7 @@ public class Mk_PageDirectoryTest
         System.out.println("equals");
         
         TransactionConverter tParser = new Mk_TransactionConverter();
-        TransactionPage tp = new Mk_TransactionPage(new File("Entity/TL"), tParser);
+        TransactionPage tp = new Mk_TransactionPage(null, tParser);
         Map<String, Long> names = new HashMap<>();
         Map<String, Long> names2 = new HashMap<String, Long>() {{put("k", 1L);}};
         Map<Long, Integer> erp = new HashMap<>();
@@ -524,6 +524,10 @@ public class Mk_PageDirectoryTest
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
         
+        @Override
+        public void truncateFile(String...strings) throws FileSystemException
+        {}
+        
     }
     
     class DummyTransactionPage implements TransactionPage
@@ -560,7 +564,7 @@ public class Mk_PageDirectoryTest
         }
 
         @Override
-        public void truncateLog() throws IOException
+        public void truncateLog()
         {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
