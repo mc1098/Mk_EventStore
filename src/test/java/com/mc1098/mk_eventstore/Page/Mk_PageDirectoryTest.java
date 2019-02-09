@@ -35,7 +35,6 @@ import com.mc1098.mk_eventstore.Transaction.Mk_TransactionConverter;
 import com.mc1098.mk_eventstore.Transaction.Transaction;
 import com.mc1098.mk_eventstore.Transaction.TransactionPage;
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -294,36 +293,57 @@ public class Mk_PageDirectoryTest
         assertTrue(dfs.readAndParseUsed);
     }
     
-    //@Test
-    public void testGetEntityPages_3args() throws Exception
+    @Test 
+    public void testConsumeEntityPagesEntityIdPageFrom() throws Exception
     {
-        System.out.println("getEntityPages");
+        System.out.println("consumeEntityPagesEntityIdPageFrom");
+        
+        //file setup
+        File file = new File("Entity/0/1/0");
+        file.getParentFile().mkdirs();
+        file.createNewFile();
+        
         long entity = 0L;
-        long id = 0L;
+        long id = 1L;
         long pageFrom = 0L;
-        Mk_PageDirectory instance = null;
-        List<EntityPage> expResult = null;
-        List<EntityPage> result = instance.getEntityPages(entity, id, pageFrom);
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        
+        EntityPage page = new Mk_EntityPage(pageFrom, entity, id, 10, 
+                new Mk_Snapshot("testEntity", id, 0, new byte[]{10}));
+        DummyFileSystem dfs = new DummyFileSystem();
+        dfs.readAndParseResult = page;
+        Mk_PageDirectory instance = new Mk_PageDirectory(dfs, null, null, null, null);
+        instance.consumeEntityPages(entity, id, pageFrom, (ep)->
+        {
+            assertEquals(page, ep);
+        });
     }
-
-//    @Test
-    public void testGetEntityPages_4args() throws Exception
+    
+    @Test 
+    public void testConsumeEntityPagesEntityIdPageFromPageTo() throws Exception
     {
-        System.out.println("getEntityPages");
+        System.out.println("consumeEntityPagesEntityIdPageFromPageTo");
+        
+        //file setup
+        File file = new File("Entity/0/1/0");
+        file.getParentFile().mkdirs();
+        file.createNewFile();
+        
         long entity = 0L;
-        long id = 0L;
-        long pageNo = 0L;
-        long pageNo1 = 0L;
-        Mk_PageDirectory instance = null;
-        List<EntityPage> expResult = null;
-        List<EntityPage> result = instance.getEntityPages(entity, id, pageNo, pageNo1);
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        long id = 1L;
+        long pageFrom = 0L;
+        long pageTo = 1L;
+        
+        EntityPage page = new Mk_EntityPage(pageFrom, entity, id, 10, 
+                new Mk_Snapshot("testEntity", id, 0, new byte[]{10}));
+        DummyFileSystem dfs = new DummyFileSystem();
+        dfs.readAndParseResult = page;
+        Mk_PageDirectory instance = new Mk_PageDirectory(dfs, null, null, null, null);
+        instance.consumeEntityPages(entity, id, pageFrom, pageTo, (ep)->
+        {
+            assertEquals(page, ep);
+        });
     }
+    
 
     @Test
     public void testCreatePendingEntityPage()
@@ -453,6 +473,7 @@ public class Mk_PageDirectoryTest
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
         
+        @Override
         public File getDirectory(String...strings) throws FileSystemException
         {
             if(getDirectoryException)
