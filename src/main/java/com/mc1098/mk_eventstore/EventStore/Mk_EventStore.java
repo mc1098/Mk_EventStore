@@ -62,11 +62,10 @@ public class Mk_EventStore implements EventStore
         RelativeFileSystem rfs = PageFileSystem.ofRoot(Paths.get("Entity"));
         
         TransactionConverter tc = new Mk_TransactionConverter();
-        File tLog = rfs.getOrCreateFile("TL");
+        rfs.createFile("TL");
         Queue<Transaction> transactions = new ArrayDeque<>(rfs
                 .readAndParseRecursively(tc, "TL"));
-        TransactionPage transactionPage = new Mk_TransactionPage(transactions, 
-                tLog, tc);
+        TransactionPage transactionPage = new Mk_TransactionPage(rfs, transactions, tc);
         
         rfs.createFile("ENM");
         
