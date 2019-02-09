@@ -17,7 +17,6 @@
 package com.mc1098.mk_eventstore.Transaction;
 
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -31,6 +30,18 @@ public interface TransactionPage
     public boolean hasTransaction();
     public Transaction peek();
     public void confirmTransactionProcessed(Transaction transaction);
-    public void truncateLog() throws IOException;
+    
+    /**
+     * This method will indicate the ability to truncate the Transaction Log on 
+     * before the next write.
+     * 
+     * Implementations do not need to guarantee that the truncation will take 
+     * place or even when this will take place. It should however guarantee 
+     * that the truncation will happen before the next write. 
+     * 
+     * This method should be non blocking and shouldn't cause any exceptions 
+     * even if called many times before the indicated truncation occurs.
+     */
+    public void truncateLog();
     public void refresh();
 }
