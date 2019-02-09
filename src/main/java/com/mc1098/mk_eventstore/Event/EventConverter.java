@@ -16,14 +16,14 @@
  */
 package com.mc1098.mk_eventstore.Event;
 
-import com.mc1098.mk_eventstore.Exception.ParseException;
+import com.mc1098.mk_eventstore.FileSystem.ByteParser;
+import com.mc1098.mk_eventstore.FileSystem.ByteSerializer;
 
 /**
  *
  * @author Max Cripps <43726912+mc1098@users.noreply.github.com>
  */
-public interface EventFormat
+public interface EventConverter extends ByteParser<Event>, 
+        ByteSerializer<Event>
 {
-    public byte[] toBytes(Event event) throws ParseException;
-    public Event parse(byte[] bytes) throws ParseException;
 }

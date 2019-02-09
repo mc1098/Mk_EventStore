@@ -18,25 +18,37 @@ package com.mc1098.mk_eventstore.Page;
 
 import com.mc1098.mk_eventstore.Entity.Mk_Snapshot;
 import com.mc1098.mk_eventstore.Entity.Snapshot;
+import com.mc1098.mk_eventstore.Event.SimpleEventConverter;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
+import com.mc1098.mk_eventstore.Exception.FileSystem.FileSystemException;
+import com.mc1098.mk_eventstore.Exception.NoPageFoundException;
+import com.mc1098.mk_eventstore.Exception.ParseException;
+import com.mc1098.mk_eventstore.Exception.SerializationException;
 import com.mc1098.mk_eventstore.Exception.TransactionException;
+import com.mc1098.mk_eventstore.FileSystem.ByteParser;
+import com.mc1098.mk_eventstore.FileSystem.ByteSerializer;
+import com.mc1098.mk_eventstore.FileSystem.PageFileSystem;
+import com.mc1098.mk_eventstore.FileSystem.RelativeFileSystem;
+import com.mc1098.mk_eventstore.FileSystem.WriteOption;
 import com.mc1098.mk_eventstore.Transaction.Mk_TransactionPage;
-import com.mc1098.mk_eventstore.Transaction.Mk_TransactionParser;
+import com.mc1098.mk_eventstore.Transaction.Mk_TransactionConverter;
 import com.mc1098.mk_eventstore.Transaction.Transaction;
 import com.mc1098.mk_eventstore.Transaction.TransactionPage;
-import com.mc1098.mk_eventstore.Transaction.TransactionParser;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import com.mc1098.mk_eventstore.Transaction.TransactionConverter;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 
 /**
  *
@@ -91,18 +103,54 @@ public class Mk_PageDirectoryTest
         
     }
 
-//    @Test
-//    public void testSetup() throws Exception
-//    {
-//        System.out.println("setup");
-//        EventFormat ef = null;
-//        TransactionPage transactionPage = null;
-//        Mk_PageDirectory expResult = null;
-//        Mk_PageDirectory result = Mk_PageDirectory.setup(ef, transactionPage);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
+    @Test
+    public void testSetup() throws Exception
+    {
+        System.out.println("setup");
+        
+        EntityMetaData emd = new EntityMetaData("name", 3, 20);
+        DummyFileSystem dfs = new DummyFileSystem();
+        dfs.recursiveReturnList = new ArrayList<EntityMetaData>(){{add(emd);}};
+        TransactionPage transactionPage = new DummyTransactionPage();
+        
+        
+        Mk_PageDirectory expResult = new Mk_PageDirectory(dfs, null, 
+                transactionPage, 
+                new HashMap<String, Long>(){{put(emd.getName(), emd.getEntity());}}, 
+                new HashMap<Long, Integer>(){{put(emd.getEntity(), emd.getErp());}});
+        Mk_PageDirectory result = Mk_PageDirectory.setup(dfs, null, transactionPage);
+        
+        assertEquals(expResult, result);
+        assertTrue(dfs.readAndParseRecursivelyUsed);
+        
+    }
+    
+    @Test
+    public void testSetup_NoENMData() throws Exception
+    {
+        System.out.println("setup_NoENMData");
+        
+        TransactionPage transactionPage = new DummyTransactionPage();
+        DummyFileSystem dfs = new DummyFileSystem();
+        Mk_PageDirectory expResult = new Mk_PageDirectory(dfs, null, 
+                transactionPage, 
+                new HashMap<>(), new HashMap<>());
+        Mk_PageDirectory result = Mk_PageDirectory.setup(dfs, null, transactionPage);
+        
+        assertEquals(expResult, result);
+        assertTrue(dfs.readAndParseRecursivelyUsed);
+        
+    }
+    
+    @Test(expected = FileSystemException.class)
+    public void testSetup_NoENMFile() throws Exception
+    {
+        System.out.println("setup_NoENMFile");
+        
+        TransactionPage transactionPage = new DummyTransactionPage();
+        RelativeFileSystem rfs = PageFileSystem.ofRoot(Paths.get("Entity"));
+        Mk_PageDirectory.setup(rfs, null, transactionPage);
+    }
 
     
     @Test
@@ -111,7 +159,7 @@ public class Mk_PageDirectoryTest
         System.out.println("getEntityName");
         long entity = 1L;
         Map<String, Long> names = new HashMap<String, Long>(){{put("testEntity", 1L);}};
-        Mk_PageDirectory instance = new Mk_PageDirectory(null, null, names, null);
+        Mk_PageDirectory instance = new Mk_PageDirectory(null, null, null, names, null);
         String expResult = "testEntity";
         String result = instance.getEntityName(entity);
         assertEquals(expResult, result);
@@ -124,7 +172,7 @@ public class Mk_PageDirectoryTest
         System.out.println("hasEntity");
         String entityName = "testEntity";
         Map<String, Long> names = new HashMap<String, Long>(){{put(entityName, 1L);}};
-        Mk_PageDirectory instance = new Mk_PageDirectory(null, null, names, null);
+        Mk_PageDirectory instance = new Mk_PageDirectory(null, null, null, names, null);
         boolean expResult = true;
         boolean result = instance.hasEntity(entityName);
         assertEquals(expResult, result);
@@ -137,7 +185,7 @@ public class Mk_PageDirectoryTest
         System.out.println("getEntity");
         String entityName = "testEntity";
         Map<String, Long> names = new HashMap<String, Long>() {{put(entityName, 1L);}};
-        Mk_PageDirectory instance = new Mk_PageDirectory(null, null, names, null);
+        Mk_PageDirectory instance = new Mk_PageDirectory(null, null, null, names, null);
         long expResult = 1L;
         long result = instance.getEntity(entityName);
         assertEquals(expResult, result);
@@ -150,41 +198,51 @@ public class Mk_PageDirectoryTest
         System.out.println("getEPR");
         long entity = 1L;
         Map<Long, Integer> epr = new HashMap<Long, Integer>(){{put(entity, 10);}};
-        Mk_PageDirectory instance = new Mk_PageDirectory(null, null, null, epr);
+        Mk_PageDirectory instance = new Mk_PageDirectory(null, null, null, null, epr);
         int expResult = 10;
         int result = instance.getEPR(entity);
         assertEquals(expResult, result);
         assertEquals(20, instance.getEPR(22));
     }
 
-    //@Test
-    public void testGetEntityPage_long_long() throws Exception
+    @Test
+    public void testGetEntityPageEntityAndId() throws Exception
     {
-        System.out.println("getEntityPage");
-        long entity = 0L;
-        long id = 0L;
-        Mk_PageDirectory instance = null;
-        EntityPage expResult = null;
+        System.out.println("getEntityPageEntityAndId");
+        
+        //file setup
+        File file = new File("Entity/0/1/0");
+        file.getParentFile().mkdirs();
+        file.createNewFile();
+        
+        long entity = 1L;
+        long id = 1L;
+        EntityPage expResult = new Mk_EntityPage(0, entity, id, 10, 
+                new Mk_Snapshot("testEntity", entity, 0, new byte[]{10}));
+        DummyFileSystem dfs = new DummyFileSystem();
+        dfs.readAndParseResult = expResult;
+        Mk_PageDirectory instance = Mk_PageDirectory.setup(dfs, null, null);
+        
         EntityPage result = instance.getEntityPage(entity, id);
         assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        assertTrue(dfs.readAndParseUsed);
+        assertTrue(dfs.getDirectoryUsed);
     }
     
-    @Test (expected = EventStoreException.class)
-    public void testGetEntityPageWhenNoSuchPageFileExists() throws Exception 
+    @Test(expected = NoPageFoundException.class)
+    public void testGetEntityPageEntityAndId_NoPageFound() throws Exception
     {
-        System.out.println("getEntityPageWhenNoSuchPageFileExists");
+        System.out.println("getEntityPageEntityAndId_NoPageFound");
         
-        long entity = 0L;
+        long entity = 1L;
         long id = 1L;
+        DummyFileSystem dfs = new DummyFileSystem();
+        dfs.getDirectoryException = true;
+        Mk_PageDirectory instance = Mk_PageDirectory.setup(dfs, null, null);
         
-        Map<Long, Integer> epr = new HashMap<Long, Integer>(){{put(entity, 10);}};
-        Mk_PageDirectory instance = new Mk_PageDirectory(null, null, null, epr);
         instance.getEntityPage(entity, id);
     }
-            
-
+    
     @Test
     public void testDoesPageExist() throws Exception
     {
@@ -197,7 +255,8 @@ public class Mk_PageDirectoryTest
         long entity = 0L;
         long id = 1L;
         long pageNo = 0L;
-        Mk_PageDirectory instance = new Mk_PageDirectory(null, null, null, null);
+        RelativeFileSystem rfs = PageFileSystem.ofRoot(Paths.get("Entity"));
+        Mk_PageDirectory instance = new Mk_PageDirectory(rfs, null, null, null, null);
         boolean expResult = true;
         boolean result = instance.doesPageExist(entity, id, pageNo);
         assertEquals(expResult, result);
@@ -211,25 +270,28 @@ public class Mk_PageDirectoryTest
         long entity = 0L;
         long id = 1L;
         long pageNo = 0L;
-        Mk_PageDirectory instance = new Mk_PageDirectory(null, null, null, null);
+        RelativeFileSystem rfs = PageFileSystem.ofRoot(Paths.get("Entity"));
+        Mk_PageDirectory instance = new Mk_PageDirectory(rfs, null, null, null, null);
         boolean expResult = false;
         boolean result = instance.doesPageExist(entity, id, pageNo);
         assertEquals(expResult, result);
     }
     
-    //@Test
-    public void testGetEntityPage_3args() throws Exception
+    @Test
+    public void testGetEntityPageEntityIdPageNo() throws Exception
     {
-        System.out.println("getEntityPage");
+        System.out.println("getEntityPageEntityIdPageNo");
         long entity = 0L;
-        long id = 0L;
+        long id = 1L;
         long pageNo = 0L;
-        Mk_PageDirectory instance = null;
-        EntityPage expResult = null;
+        EntityPage expResult = new Mk_EntityPage(pageNo, entity, id, 10, 
+                new Mk_Snapshot("testEntity", id, 0, new byte[]{10}));
+        DummyFileSystem dfs = new DummyFileSystem();
+        dfs.readAndParseResult = expResult;
+        Mk_PageDirectory instance = new Mk_PageDirectory(dfs, null, null, null, null);
         EntityPage result = instance.getEntityPage(entity, id, pageNo);
         assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        assertTrue(dfs.readAndParseUsed);
     }
     
     //@Test
@@ -272,23 +334,59 @@ public class Mk_PageDirectoryTest
         long pageNo = 0L;
         Snapshot snapshot = new Mk_Snapshot("testEntity", id, 0, new byte[]{10});
         Map<Long, Integer> epr = new HashMap<Long, Integer>(){{put(0L, 10);}};
-        Mk_PageDirectory instance = new Mk_PageDirectory(null, null, null, epr);
+        Mk_PageDirectory instance = new Mk_PageDirectory(null, null, null, null, epr);
         EntityPage expResult = new Mk_EntityPage(pageNo, entity, id, 10, snapshot);
         EntityPage result = instance.createPendingEntityPage(entity, id, pageNo, snapshot);
         assertEquals(expResult, result);
     }
     
-    //@Test
+    @Test
     public void testConfirmPendingPage() throws Exception
     {
         System.out.println("confirmPendingPage");
-        EntityPage page = null;
-        Mk_PageDirectory instance = null;
-        EntityPage expResult = null;
-        EntityPage result = instance.confirmPendingPage(page);
+        
+        DummyFileSystem dfs = new DummyFileSystem();
+        Mk_PageDirectory instance = new Mk_PageDirectory(dfs, 
+                new SimpleEventConverter(), null, new HashMap<>(), 
+                new HashMap<>());
+        EntityPage expResult = instance.createPendingEntityPage(0, 1, 0, 
+                new Mk_Snapshot("testEntity", 1, 0, new byte[]{10}));
+        EntityPage result = instance.confirmPendingPage(expResult);
         assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        assertEquals(2, dfs.writeUsed);
+        assertTrue(dfs.doesFileExistUsed);
+        assertTrue(dfs.createFileUsed);
+        
+    }
+    
+    @Test(expected = EventStoreException.class)
+    public void testConfirmPendingPage_NoPendingPage() throws Exception
+    {
+        System.out.println("confirmPendingPage_NoPendingPage");
+        
+        DummyFileSystem dfs = new DummyFileSystem();
+        Mk_PageDirectory instance = new Mk_PageDirectory(dfs, 
+                new SimpleEventConverter(), null, new HashMap<>(), 
+                new HashMap<>());
+        EntityPage expResult = new Mk_EntityPage(0, 0, 1, 20, 
+                new Mk_Snapshot("testEntity", 1, 0, new byte[]{10}));
+        instance.confirmPendingPage(expResult);
+    }
+    
+    @Test(expected = EventStoreException.class)
+    public void testConfirmPendingPage_PageAlreadyExists() throws Exception
+    {
+        System.out.println("confirmPendingPage_PageAlreadyExists");
+        
+        DummyFileSystem dfs = new DummyFileSystem();
+        dfs.doesFileExistResult = true;
+        Mk_PageDirectory instance = new Mk_PageDirectory(dfs, 
+                new SimpleEventConverter(), null, 
+                new HashMap<String, Long>(){{put("testEntity", 1L);}}, 
+                new HashMap<>());
+        EntityPage expResult = instance.createPendingEntityPage(0, 1, 0, 
+                new Mk_Snapshot("testEntity", 1, 0, new byte[]{10}));
+        instance.confirmPendingPage(expResult);
     }
     
     @Test
@@ -296,48 +394,139 @@ public class Mk_PageDirectoryTest
     {
         System.out.println("getTransactionPage");
         
-        TransactionPage expResult = new Mk_TransactionPage(new File("Entity/TL"), 
-                        new Mk_TransactionParser());
-        Mk_PageDirectory instance = new Mk_PageDirectory(null, 
+        TransactionPage expResult = new Mk_TransactionPage(null, 
+                        new Mk_TransactionConverter());
+        Mk_PageDirectory instance = new Mk_PageDirectory(null, null, 
                 expResult, null, null);
         
         TransactionPage result = instance.getTransactionPage();
         assertEquals(expResult, result);
     }
     
-    //@Test
-    public void testSetEntityPageParser()
-    {
-        System.out.println("setEntityPageParser");
-        EntityPageParser parser = null;
-        Mk_PageDirectory instance = null;
-        instance.setEntityPageParser(parser);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
     @Test
     public void testEquals()
     {
         System.out.println("equals");
         
-        TransactionParser tParser = new Mk_TransactionParser();
-        TransactionPage tp = new Mk_TransactionPage(new File("Entity/TL"), tParser);
+        TransactionConverter tParser = new Mk_TransactionConverter();
+        TransactionPage tp = new Mk_TransactionPage(null, tParser);
         Map<String, Long> names = new HashMap<>();
         Map<String, Long> names2 = new HashMap<String, Long>() {{put("k", 1L);}};
         Map<Long, Integer> erp = new HashMap<>();
         Map<Long, Integer> erp2 = new HashMap<Long, Integer>() {{put(1L, 2);}};
         
-        PageDirectory dir = new Mk_PageDirectory(null, tp, names, erp);
-        PageDirectory dir2 = new Mk_PageDirectory(null, new DummyTransactionPage(), names, erp);
-        PageDirectory dir3 = new Mk_PageDirectory(null, tp, names2, erp);
-        PageDirectory dir4 = new Mk_PageDirectory(null, tp, names, erp2);
+        PageDirectory dir = new Mk_PageDirectory(null, null, tp, names, erp);
+        PageDirectory dir2 = new Mk_PageDirectory(null, null, new DummyTransactionPage(), names, erp);
+        PageDirectory dir3 = new Mk_PageDirectory(null, null, tp, names2, erp);
+        PageDirectory dir4 = new Mk_PageDirectory(null, null, tp, names, erp2);
         
         assertEquals(dir, dir); //sanity check
         assertNotEquals(dir, dir2);
         assertNotEquals(dir, dir3);
         assertNotEquals(dir, dir4);
         assertNotEquals(dir, new Object());
+        
+    }
+    
+    class DummyFileSystem implements RelativeFileSystem
+    {
+        public Object readAndParseResult;
+        public List recursiveReturnList = new ArrayList();
+        public boolean readAndParseRecursivelyUsed;
+        public boolean readAndParseUsed;
+        public boolean getDirectoryUsed;
+        public boolean getDirectoryException;
+        public boolean createFileUsed;
+        public boolean doesFileExistUsed;
+        public boolean doesFileExistResult;
+        public int writeUsed;
+
+        @Override
+        public String getRootPath()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public Path getRelativePath(String... strings)
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+        
+        public File getDirectory(String...strings) throws FileSystemException
+        {
+            if(getDirectoryException)
+                throw new FileSystemException("Intentional test exception");
+            this.getDirectoryUsed = true;
+            return new File("Entity/0/1");
+        }
+
+        @Override
+        public File getOrCreateDirectory(String... strings) throws FileSystemException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+        
+        @Override
+        public File getFile(String...strings) throws FileSystemException
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void createFile(String... strings) throws FileSystemException
+        {
+            this.createFileUsed = true;
+        }
+
+        @Override
+        public File getOrCreateFile(String... strings) throws FileSystemException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public boolean doesFileExist(String... strings)
+        {
+            this.doesFileExistUsed = true;
+            return doesFileExistResult;
+        }
+
+        @Override
+        public byte[] read(String... strings) throws FileSystemException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public <T> T readAndParse(ByteParser<T> parser, String... strings) throws FileSystemException, ParseException
+        {
+            this.readAndParseUsed = true;
+            return (T) readAndParseResult;
+        }
+
+        @Override
+        public <T> List<T> readAndParseRecursively(ByteParser<T> parser, String... strings) throws FileSystemException, ParseException
+        {
+            this.readAndParseRecursivelyUsed = true;
+            return (List<T>) recursiveReturnList;
+        }
+
+        @Override
+        public void write(WriteOption wo, byte[] bytes, String... strings) throws FileSystemException
+        {
+            this.writeUsed += 1;
+        }
+
+        @Override
+        public <T> void serializeAndWrite(WriteOption wo, ByteSerializer<T> serializer, List<T> list, String... strings) throws FileSystemException, SerializationException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+        
+        @Override
+        public void truncateFile(String...strings) throws FileSystemException
+        {}
         
     }
     
@@ -363,7 +552,7 @@ public class Mk_PageDirectoryTest
         }
 
         @Override
-        public Transaction poll(long l, TimeUnit tu) throws InterruptedException
+        public Transaction peek()
         {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
@@ -375,7 +564,7 @@ public class Mk_PageDirectoryTest
         }
 
         @Override
-        public void truncateLog() throws IOException
+        public void truncateLog()
         {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }

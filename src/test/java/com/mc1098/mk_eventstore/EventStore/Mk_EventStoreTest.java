@@ -21,21 +21,21 @@ import com.mc1098.mk_eventstore.Entity.Mk_Snapshot;
 import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Event.Event;
 import com.mc1098.mk_eventstore.Event.Mk_Event;
-import com.mc1098.mk_eventstore.Event.SimpleEventFormat;
+import com.mc1098.mk_eventstore.Event.SimpleEventConverter;
 import com.mc1098.mk_eventstore.Exception.EntityChronologicalException;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import com.mc1098.mk_eventstore.Exception.TransactionException;
+import com.mc1098.mk_eventstore.FileSystem.PageFileSystem;
+import com.mc1098.mk_eventstore.FileSystem.RelativeFileSystem;
 import com.mc1098.mk_eventstore.Page.EntityPage;
-import com.mc1098.mk_eventstore.Page.EntityPageParser;
 import com.mc1098.mk_eventstore.Page.Mk_EntityPage;
 import com.mc1098.mk_eventstore.Page.Mk_PageDirectory;
 import com.mc1098.mk_eventstore.Page.PageDirectory;
 import com.mc1098.mk_eventstore.Transaction.Mk_TransactionPage;
-import com.mc1098.mk_eventstore.Transaction.Mk_TransactionParser;
+import com.mc1098.mk_eventstore.Transaction.Mk_TransactionConverter;
 import com.mc1098.mk_eventstore.Transaction.Mk_TransactionWorker;
 import com.mc1098.mk_eventstore.Transaction.Transaction;
 import com.mc1098.mk_eventstore.Transaction.TransactionPage;
-import com.mc1098.mk_eventstore.Transaction.TransactionParser;
 import com.mc1098.mk_eventstore.Transaction.TransactionType;
 import com.mc1098.mk_eventstore.Transaction.TransactionWorker;
 import java.io.File;
@@ -50,13 +50,15 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import com.mc1098.mk_eventstore.Page.EntityPageConverter;
+import com.mc1098.mk_eventstore.Transaction.TransactionConverter;
+import java.nio.file.Paths;
 
 /**
  *
@@ -117,9 +119,10 @@ public class Mk_EventStoreTest
         
         File transactionLog = new File("Entity/TL");
         File enmFile = new File("Entity/ENM");
-        TransactionParser parser = new Mk_TransactionParser();
-        TransactionPage transactionPage = new Mk_TransactionPage(transactionLog, parser);
-        PageDirectory directory = Mk_PageDirectory.setup(new SimpleEventFormat(), transactionPage);
+        RelativeFileSystem rfs = PageFileSystem.ofRoot(Paths.get("Entity"));
+        TransactionConverter parser = new Mk_TransactionConverter();
+        TransactionPage transactionPage = new Mk_TransactionPage(rfs, parser);
+        PageDirectory directory = Mk_PageDirectory.setup(rfs, new SimpleEventConverter(), transactionPage);
         EventStore expResult = new Mk_EventStore(directory, transactionPage, null);
         
         assertEquals(expResult, result);
@@ -137,12 +140,13 @@ public class Mk_EventStoreTest
         transactionLog.createNewFile();
         File enmFile = new File("Entity/ENM");
         enmFile.createNewFile();
-        TransactionParser parser = new Mk_TransactionParser();
-        TransactionPage transactionPage = new Mk_TransactionPage(transactionLog, parser);
-        PageDirectory directory = Mk_PageDirectory.setup(new SimpleEventFormat(), transactionPage);
+        RelativeFileSystem rfs = PageFileSystem.ofRoot(Paths.get("Entity"));
+        TransactionConverter parser = new Mk_TransactionConverter();
+        TransactionPage transactionPage = new Mk_TransactionPage(rfs, parser);
+        PageDirectory directory = Mk_PageDirectory.setup(rfs, new SimpleEventConverter(), transactionPage);
         EventStore expResult = new Mk_EventStore(directory, transactionPage, null);
         
-        EventStore result = Mk_EventStore.create(directory, transactionPage);
+        EventStore result = Mk_EventStore.create(rfs, directory, transactionPage);
         
         assertEquals(expResult, result);
         assertTrue(transactionLog.exists());
@@ -157,13 +161,15 @@ public class Mk_EventStoreTest
         File transactionLog = new File("Entity/TL");
         transactionLog.getParentFile().mkdirs();
         transactionLog.createNewFile();
+        RelativeFileSystem rfs = PageFileSystem.ofRoot(Paths.get("Entity"));
         try (FileChannel fc = FileChannel.open(transactionLog.toPath(), StandardOpenOption.WRITE); 
                 FileLock fl = fc.lock())
         {
-            TransactionParser parser = new Mk_TransactionParser();
-            TransactionPage transactionPage = new Mk_TransactionPage(transactionLog, parser);
-            PageDirectory directory = Mk_PageDirectory.setup(new SimpleEventFormat(), transactionPage);
-            Mk_EventStore.create(directory, transactionPage);
+            
+            TransactionConverter parser = new Mk_TransactionConverter();
+            TransactionPage transactionPage = new Mk_TransactionPage(rfs, parser);
+            PageDirectory directory = Mk_PageDirectory.setup(rfs, new SimpleEventConverter(), transactionPage);
+            Mk_EventStore.create(rfs, directory, transactionPage);
         }
     }
 
@@ -376,8 +382,8 @@ public class Mk_EventStoreTest
     {
         System.out.println("close");
         
-        TransactionWorker transactionWorker = new Mk_TransactionWorker(new DummyTransactionPage(), 
-                        new DummyPageDirectory(), null);
+        TransactionWorker transactionWorker = new Mk_TransactionWorker(null, 
+                new DummyTransactionPage(), new DummyPageDirectory(), null);
         Mk_EventStore instance = new Mk_EventStore(null, null, transactionWorker);
         transactionWorker.start();
         instance.close();
@@ -396,8 +402,9 @@ public class Mk_EventStoreTest
         transactionLog.createNewFile();
         File enm = new File("Entity/ENM");
         enm.createNewFile();
-        TransactionPage transactionPage = new Mk_TransactionPage(transactionLog, null);
-        PageDirectory directory = Mk_PageDirectory.setup(null, transactionPage);
+        RelativeFileSystem rfs = PageFileSystem.ofRoot(Paths.get("Entity"));
+        TransactionPage transactionPage = new Mk_TransactionPage(rfs, null);
+        PageDirectory directory = Mk_PageDirectory.setup(rfs, null, transactionPage);
         
         Mk_EventStore es = new Mk_EventStore(directory, transactionPage, null);
         Mk_EventStore es2 = new Mk_EventStore(new DummyPageDirectory(), transactionPage, null);
@@ -504,16 +511,11 @@ public class Mk_EventStoreTest
         }
 
         @Override
-        public EntityPageParser getEntityPageParser()
+        public EntityPageConverter getEntityPageConverter()
         {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
-        @Override
-        public void setEntityPageParser(EntityPageParser parser)
-        {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
         
     }
     
@@ -543,7 +545,7 @@ public class Mk_EventStoreTest
         }
 
         @Override
-        public Transaction poll(long l, TimeUnit tu) throws InterruptedException
+        public Transaction peek()
         {
             return null;
         }
@@ -555,7 +557,7 @@ public class Mk_EventStoreTest
         }
 
         @Override
-        public void truncateLog() throws IOException
+        public void truncateLog()
         {}
 
         @Override

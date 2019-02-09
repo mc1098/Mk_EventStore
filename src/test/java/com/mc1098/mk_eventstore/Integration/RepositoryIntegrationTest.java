@@ -44,7 +44,7 @@ public class RepositoryIntegrationTest
     }
     
     @BeforeClass
-    public static void setUpClass() throws IOException, EventStoreException
+    public static void setUpClass() throws Exception
     {
         eventStore =  Mk_EventStore.create();
     }

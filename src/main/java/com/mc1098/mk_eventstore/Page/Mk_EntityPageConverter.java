@@ -19,25 +19,26 @@ package com.mc1098.mk_eventstore.Page;
 import com.mc1098.mk_eventstore.Entity.Mk_Snapshot;
 import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Event.Event;
-import com.mc1098.mk_eventstore.Event.EventFormat;
 import com.mc1098.mk_eventstore.Exception.ParseException;
+import com.mc1098.mk_eventstore.Exception.SerializationException;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Queue;
+import com.mc1098.mk_eventstore.Event.EventConverter;
 
 /**
  *
  * @author Max Cripps <43726912+mc1098@users.noreply.github.com>
  */
-public class Mk_EntityPageParser implements EntityPageParser
+public class Mk_EntityPageConverter implements EntityPageConverter
 {
     private final PageDirectory directory;
-    private final EventFormat eventFormat;
+    private final EventConverter eventConverter;
     
-    public Mk_EntityPageParser(PageDirectory directory, EventFormat ef)
+    public Mk_EntityPageConverter(PageDirectory directory, EventConverter ec)
     {
         this.directory = directory;
-        this.eventFormat = ef;
+        this.eventConverter = ec;
     }
 
     @Override
@@ -57,7 +58,7 @@ public class Mk_EntityPageParser implements EntityPageParser
         Queue<Event> events = new ArrayDeque<>();
         
         while(buffer.hasRemaining())
-            readAndParseEventData(buffer, events);
+            events.add(eventConverter.parse(buffer));
         
         long snapshotVersion  = version - events.size();
         Snapshot snapshot = new Mk_Snapshot(entityName, entityId, 
@@ -68,17 +69,8 @@ public class Mk_EntityPageParser implements EntityPageParser
     
     }
 
-    private void readAndParseEventData(ByteBuffer buffer, Queue<Event> events) 
-            throws ParseException
-    {
-        int eventSize = buffer.getInt();
-        byte[] eventData = new byte[eventSize];
-        buffer.get(eventData);
-        events.add(eventFormat.parse(eventData));
-    }
-
     @Override
-    public byte[] toBytes(EntityPage page) throws ParseException
+    public byte[] toBytes(EntityPage page) throws SerializationException
     {
         int size = 0;
         
@@ -94,7 +86,7 @@ public class Mk_EntityPageParser implements EntityPageParser
         
         for (int i = 0; i < events.length; i++)
         {
-            byte[] data = eventFormat.toBytes(events[i]);
+            byte[] data = eventConverter.toBytes(events[i]);
             size+= Integer.BYTES + data.length;
             bytes[i] = data;
         }

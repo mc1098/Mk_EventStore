@@ -39,11 +39,12 @@ import java.util.logging.Logger;
  */
 public class PageFileSystem implements RelativeFileSystem
 {
-    public static PageFileSystem ofRoot(Path path) throws FileSystemException
+    
+    public static PageFileSystem ofRoot(Path root) throws FileSystemException
     {
-        if(path.isAbsolute())
+        if(root.isAbsolute())
             throw new FileSystemException("Root paths should only be relative.");
-        File file = path.toFile();
+        File file = root.toFile();
         try
         {
             boolean created = file.mkdir();
@@ -60,7 +61,8 @@ public class PageFileSystem implements RelativeFileSystem
         
     }
     
-    private final static Logger LOGGER = Logger.getLogger(PageFileSystem.class.getName());
+    private static final String LOG_MSG_MKDIRS = "Created directories to form path {0}.";
+    private static final Logger LOGGER = Logger.getLogger(PageFileSystem.class.getName());
     
     private final String root;
     
@@ -71,6 +73,86 @@ public class PageFileSystem implements RelativeFileSystem
     
     @Override
     public String getRootPath() {return root;}
+    
+    @Override
+    public Path getRelativePath(String...strings) {return Paths.get(root, strings);}
+    
+    @Override
+    public File getDirectory(String...strings) throws FileSystemException
+    {
+        Path path = getRelativePath(strings);
+        File file = path.toFile();
+        
+        if(file.exists() && file.isDirectory())
+            return file;
+        else
+            throw new FileSystemException(String.format("The directory %s at path %s "
+                    + "does not exist or exists but is a file.",
+                    file.getName(), file.getPath()));
+    }
+    
+    @Override
+    public File getOrCreateDirectory(String...strings) throws FileSystemException
+    {
+        Path path = getRelativePath(strings);
+        File file = path.toFile();
+        
+        if(file.getParentFile().mkdirs())
+            LOGGER.log(Level.FINEST, LOG_MSG_MKDIRS, 
+                    file.getPath());
+        
+        if(file.mkdir())
+            LOGGER.log(Level.FINEST, "Created directory {0}.", 
+                    file.getName());
+        
+        if(!file.isDirectory())
+            throw new FileSystemException(String.format("Unable to create "
+                    + "directory %s at the relative path %s. If a file already "
+                    + "exists with this path then this will be the cause.", 
+                    file.getName(), file.getPath()));
+        else 
+            return file;
+    }
+    
+    @Override
+    public File getFile(String...strings) throws FileSystemException
+    {
+        Path path = getRelativePath(strings);
+        File file = path.toFile();
+        
+        if(file.exists() && !file.isDirectory())
+            return file;
+        else
+            throw new FileSystemException(String.format("The file %s at path %s "
+                    + "does not exist or exists but is a directory.",
+                    file.getName(), file.getPath()));
+    }
+    
+    @Override 
+    public void createFile(String...strings) throws FileSystemException
+    {
+        Path path = getRelativePath(strings);
+        File file = path.toFile();
+        
+        if(file.isDirectory())
+            throw new FileSystemException(String.format("Cannot create a new "
+                    + "file at path %s as a directory already exists at this path.", 
+                    file.getPath()));
+        
+        if(file.getParentFile().mkdirs())
+            LOGGER.log(Level.FINEST, LOG_MSG_MKDIRS, 
+                    file.getPath());
+        
+        try
+        {
+            if(file.createNewFile())
+                LOGGER.log(Level.FINEST, "Created file {0} at path {1}.",
+                        new Object[]{file.getName(), file.getPath()});
+        } catch (IOException ex)
+        {
+            throw new FileSystemException(ex);
+        }
+    }
 
     @Override
     public File getOrCreateFile(String...strings) throws FileSystemException
@@ -79,7 +161,7 @@ public class PageFileSystem implements RelativeFileSystem
         File file = path.toFile();
         
         if(file.getParentFile().mkdirs())
-            LOGGER.log(Level.FINEST, "Created directories to form path {0}.", 
+            LOGGER.log(Level.FINEST, LOG_MSG_MKDIRS, 
                     file.getPath());
         try
         {
@@ -107,6 +189,15 @@ public class PageFileSystem implements RelativeFileSystem
         Path path = Paths.get(root, strings);
         return readToBuffer(path).array();
     }
+    
+    @Override
+    public <T> T readAndParse(ByteParser<T> parser, String...strings) 
+            throws FileSystemException, ParseException
+    {
+        Path path = Paths.get(root, strings);
+        ByteBuffer buffer = readToBuffer(path);
+        return parser.parse(buffer);
+    }
 
     @Override
     public <T> List<T> readAndParseRecursively(ByteParser<T> parser, 
@@ -116,7 +207,7 @@ public class PageFileSystem implements RelativeFileSystem
         ByteBuffer buffer = readToBuffer(path);
         List<T> list = new ArrayList<>();
         while(buffer.hasRemaining())
-            list.add(parser.fromBytes(buffer));
+            list.add(parser.parse(buffer));
             
         return list;
     }
@@ -183,6 +274,27 @@ public class PageFileSystem implements RelativeFileSystem
         } catch(IOException ex)
         {
             throw new FileSystemException(ex);
+        }
+    }
+    
+    @Override
+    public void truncateFile(String...strings) throws FileSystemException
+    {
+        Path path = getRelativePath(strings);
+        File file = path.toFile();
+        
+        if(!file.exists() || file.isDirectory())
+            throw new FileSystemException(String.format("Unable to truncate file"
+                    + " %s at path %s as it doesn't exist or is a directory", 
+                    file.getName(), file.getPath()));
+        
+        try(FileChannel fc = FileChannel.open(path, WriteOption.WRITE.option()))
+        {
+            if(fc.size() != 0)
+                fc.truncate(0);
+        } catch(IOException ex)
+        {
+            throw new FileSystemException("Unable to truncate file", ex);
         }
     }
 

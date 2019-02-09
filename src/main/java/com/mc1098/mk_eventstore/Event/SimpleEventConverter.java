@@ -19,31 +19,35 @@ package com.mc1098.mk_eventstore.Event;
 import com.mc1098.mk_eventstore.Exception.ParseException;
 import com.mc1098.mk_eventstore.Exception.SerializationException;
 import com.mc1098.mk_eventstore.Util.EventStoreUtils;
+import java.nio.ByteBuffer;
 
 /**
  *
  * @author Max Cripps <43726912+mc1098@users.noreply.github.com>
  */
-public class SimpleEventFormat implements EventFormat
+public class SimpleEventConverter implements EventConverter
 {
 
     @Override
-    public byte[] toBytes(Event event) throws ParseException
+    public byte[] toBytes(Event event) throws SerializationException
     {
         try
         {
             return EventStoreUtils.serialise(event);
         } catch(SerializationException ex)
         {
-            throw new ParseException(ex);
+            throw new SerializationException(ex);
         }
     }
 
     @Override
-    public Event parse(byte[] bytes) throws ParseException
+    public Event parse(ByteBuffer buffer) throws ParseException
     {
         try
         {
+            int size = buffer.getInt();
+            byte[] bytes = new byte[size];
+            buffer.get(bytes);
             return (Event) EventStoreUtils.deserialise(bytes);
         } catch(SerializationException | ClassCastException ex)
         {

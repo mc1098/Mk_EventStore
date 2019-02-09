@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
  *
  * @author Max Cripps <43726912+mc1098@users.noreply.github.com>
  */
-public class Mk_TransactionParser implements TransactionParser
+public class Mk_TransactionConverter implements TransactionConverter
 {
     
     /*

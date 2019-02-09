@@ -14,17 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.mc1098.mk_eventstore.Page;
+package com.mc1098.mk_eventstore.Transaction;
 
-import com.mc1098.mk_eventstore.Exception.ParseException;
-import java.nio.ByteBuffer;
+import com.mc1098.mk_eventstore.FileSystem.ByteParser;
+import com.mc1098.mk_eventstore.FileSystem.ByteSerializer;
 
 /**
  *
  * @author Max Cripps <43726912+mc1098@users.noreply.github.com>
  */
-public interface EntityPageParser
+public interface TransactionConverter extends ByteParser<Transaction>, 
+        ByteSerializer<Transaction>
 {
-    public EntityPage parse(ByteBuffer buffer) throws ParseException;
-    public byte[] toBytes(EntityPage page) throws ParseException;
 }

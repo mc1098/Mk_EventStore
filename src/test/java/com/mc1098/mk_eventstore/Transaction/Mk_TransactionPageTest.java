@@ -16,15 +16,19 @@
  */
 package com.mc1098.mk_eventstore.Transaction;
 
-import com.mc1098.mk_eventstore.Exception.TransactionException;
+import com.mc1098.mk_eventstore.Exception.EventStoreException;
+import com.mc1098.mk_eventstore.Exception.FileSystem.FileSystemException;
+import com.mc1098.mk_eventstore.Exception.ParseException;
+import com.mc1098.mk_eventstore.Exception.SerializationException;
+import com.mc1098.mk_eventstore.FileSystem.ByteParser;
+import com.mc1098.mk_eventstore.FileSystem.ByteSerializer;
+import com.mc1098.mk_eventstore.FileSystem.RelativeFileSystem;
+import com.mc1098.mk_eventstore.FileSystem.WriteOption;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -34,8 +38,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
 
 /**
  *
@@ -43,11 +45,6 @@ import org.junit.rules.TemporaryFolder;
  */
 public class Mk_TransactionPageTest
 {
-    
-    @Rule
-    public TemporaryFolder testFolder = new TemporaryFolder();
-    
-    private File transactionLogFile;
     
     public Mk_TransactionPageTest()
     {
@@ -66,7 +63,6 @@ public class Mk_TransactionPageTest
     @Before
     public void setUp() throws IOException
     {
-        this.transactionLogFile = testFolder.newFile("TL");
     }
     
     @After
@@ -75,55 +71,18 @@ public class Mk_TransactionPageTest
     }
 
     @Test
-    public void testParse() throws Exception
-    {
-        System.out.println("parse");
-        
-        Transaction transaction = new Transaction(TransactionType.PUT_SNAPSHOT, 
-                0, 0, 1, 0, new byte[]{111});
-        TransactionParser parser = new Mk_TransactionParser();
-        TransactionPage expResult = new Mk_TransactionPage(transactionLogFile, parser);
-        expResult.writeTransaction(transaction);
-        expResult.refresh();
-        
-        byte[] bytes = readFile(transactionLogFile);
-        ByteBuffer buffer = ByteBuffer.wrap(bytes);
-        TransactionPage result = Mk_TransactionPage.parse(transactionLogFile, 
-                buffer, parser);
-        
-        assertEquals(expResult, result);
-    }
-    
-    @Test
-    public void testParse_EmptyFile() throws Exception
-    {
-        System.out.println("parse_EmptyFile");
-        
-        TransactionParser parser = new Mk_TransactionParser();
-        TransactionPage expResult = new Mk_TransactionPage(transactionLogFile, parser);
-        
-        byte[] bytes = readFile(transactionLogFile);
-        ByteBuffer buffer = ByteBuffer.wrap(bytes);
-        TransactionPage result = Mk_TransactionPage.parse(transactionLogFile, 
-                buffer, parser);
-        
-        assertEquals(expResult, result);
-    }
-
-    @Test
     public void testWriteTransaction_HasTransaction() throws Exception
     {
         System.out.println("writeTransaction_HasTransaction");
         Transaction expResult = new Transaction(TransactionType.PUT_EVENT, 0, 0, 1, 0, new byte[]{20, 10});
-        TransactionParser parser = new Mk_TransactionParser();
-        Mk_TransactionPage instance = new Mk_TransactionPage(transactionLogFile, parser);
+        DummyFileSystem dfs = new DummyFileSystem();
+        TransactionConverter converter = new Mk_TransactionConverter();
+        Mk_TransactionPage instance = new Mk_TransactionPage(dfs, converter);
         instance.writeTransaction(expResult);
         instance.refresh();
-        byte[] bytes = readFile(transactionLogFile);
-        Transaction result =  parser.parse(ByteBuffer.wrap(bytes));
         
         assertEquals(true, instance.hasTransaction());
-        assertEquals(expResult, result);
+        assertTrue(dfs.writeUsed);
         
     }
 
@@ -137,51 +96,50 @@ public class Mk_TransactionPageTest
         List<Transaction> transactions = new ArrayList<>();
         transactions.add(transaction1);
         transactions.add(transaction2);
-        TransactionParser parser = new Mk_TransactionParser();
-        Mk_TransactionPage instance = new Mk_TransactionPage(transactionLogFile, parser);
+        DummyFileSystem dfs = new DummyFileSystem();
+        TransactionConverter converter = new Mk_TransactionConverter();
+        Mk_TransactionPage instance = new Mk_TransactionPage(dfs, converter);
         instance.writeTransaction(transactions);
         instance.refresh();
         
-        byte[] bytes = readFile(transactionLogFile);
-        ByteBuffer buffer = ByteBuffer.wrap(bytes);
-        
         assertEquals(true, instance.hasTransaction());
-        assertEquals(transaction1, parser.parse(buffer));
-        assertEquals(transaction2, parser.parse(buffer));
-        
+        assertTrue(dfs.serializeAndWriteUsed);
     }
     
     @Test
-    public void testPoll() throws Exception
+    public void testPeek() throws Exception
     {
-        System.out.println("poll");
+        System.out.println("peek");
         long l = 2L;
-        TimeUnit tu = TimeUnit.SECONDS;
-        TransactionParser parser = new Mk_TransactionParser();
-        Mk_TransactionPage instance = new Mk_TransactionPage(transactionLogFile, parser);
+        DummyFileSystem dfs = new DummyFileSystem();
+        TransactionConverter converter = new Mk_TransactionConverter();
+        Mk_TransactionPage instance = new Mk_TransactionPage(dfs, converter);
         Transaction expResult = new Transaction(TransactionType.PUT_SNAPSHOT, 0,
                 0, l, 0, new byte[]{1, 50, 22, 12});
         
         instance.writeTransaction(expResult);
         instance.refresh(); //refresh called to confirm pending to be added to transaction queue.
         
-        Transaction result = instance.poll(l, tu);
+        Transaction result = instance.peek();
         assertEquals(expResult, result);
+        assertTrue(dfs.writeUsed);
     }
 
     @Test
-    public void testConfirmTransactionProcessed() throws TransactionException
+    public void testConfirmTransactionProcessed() throws EventStoreException
     {
         System.out.println("confirmTransactionProcessed");
         Transaction transaction = new Transaction(TransactionType.PUT_SNAPSHOT, 
                 0, 0, 1, 0, new byte[]{10});
-        TransactionParser parser = new Mk_TransactionParser();
-        Mk_TransactionPage instance = new Mk_TransactionPage(transactionLogFile, parser);
+        DummyFileSystem dfs = new DummyFileSystem();
+        TransactionConverter converter = new Mk_TransactionConverter();
+        Mk_TransactionPage instance = new Mk_TransactionPage(dfs, converter);
         instance.writeTransaction(transaction);
         instance.refresh();
-        assertEquals(true, instance.hasTransaction());
+        assertTrue(instance.hasTransaction());
         instance.confirmTransactionProcessed(transaction);
-        assertEquals(false, instance.hasTransaction());
+        assertFalse(instance.hasTransaction());
+        assertTrue(dfs.writeUsed);
     }
     
     @Test
@@ -207,17 +165,17 @@ public class Mk_TransactionPageTest
         System.out.println("truncateLog");
         
         Transaction transaction = new Transaction(TransactionType.PUT_EVENT, 0, 0, 1, 0, new byte[]{33});
-        TransactionParser parser = new Mk_TransactionParser();
-        Mk_TransactionPage instance = new Mk_TransactionPage(transactionLogFile, parser);
-        instance.writeTransaction(transaction);
-        byte[] bytes = readFile(transactionLogFile);
-        
-        assertTrue("Expect file to contain bytes for the written transaction.",
-                bytes.length > 0);
+        DummyFileSystem dfs = new DummyFileSystem();
+        TransactionConverter converter = new Mk_TransactionConverter();
+        Mk_TransactionPage instance = new Mk_TransactionPage(dfs, converter);
         instance.truncateLog();
-        bytes = readFile(transactionLogFile);
-        assertTrue("Expect file to be empty after truncateLog method was used.", 
-                bytes.length == 0);
+        //truncateLog flips an internal flag that is only checked on the 
+        //next write request.
+        instance.writeTransaction(transaction);
+        
+        assertTrue(dfs.truncateFileUsed);
+        assertTrue(dfs.writeUsed);
+        
     }
     
     @Test
@@ -225,33 +183,115 @@ public class Mk_TransactionPageTest
     {
         System.out.println("equals");
         
-        File file = testFolder.newFile("test");
-        TransactionParser parser = new Mk_TransactionParser();
+        DummyFileSystem dfs = new DummyFileSystem();
+        TransactionConverter converter = new Mk_TransactionConverter();
         Transaction transaction = new Transaction(TransactionType.PUT_SNAPSHOT, 
                 0, 0, 1, 0, new byte[]{10});
         
-        TransactionPage page1 = new Mk_TransactionPage(transactionLogFile, null);
-        TransactionPage page2 = new Mk_TransactionPage(file, null);
-        TransactionPage page3 = new Mk_TransactionPage(transactionLogFile, parser);
-        page3.writeTransaction(transaction);
-        page3.refresh();
+        TransactionPage page1 = new Mk_TransactionPage(null, null);
+        TransactionPage page2 = new Mk_TransactionPage(dfs, converter);
+        page2.writeTransaction(transaction);
+        page2.refresh();
         
         assertEquals(page1, page1); //sanity check
         assertNotEquals(page1, page2);
-        assertNotEquals(page1, page3);
         assertNotEquals(page1, new Object());
     }
 
     
-    private byte[] readFile(File file) throws IOException
+    class DummyFileSystem implements RelativeFileSystem
     {
-        try(FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.READ))
+
+        public boolean writeUsed;
+        public boolean serializeAndWriteUsed;
+        public boolean truncateFileUsed;
+
+        @Override
+        public String getRootPath()
         {
-            int size = (int) fc.size();
-            ByteBuffer buffer = ByteBuffer.allocate(size);
-            fc.read(buffer);
-            return buffer.array();
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
+
+        @Override
+        public Path getRelativePath(String... strings)
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public File getDirectory(String... strings) throws FileSystemException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public File getOrCreateDirectory(String... strings) throws FileSystemException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public File getFile(String... strings) throws FileSystemException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void createFile(String... strings) throws FileSystemException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public File getOrCreateFile(String... strings) throws FileSystemException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public boolean doesFileExist(String... strings)
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public byte[] read(String... strings) throws FileSystemException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public <T> T readAndParse(ByteParser<T> parser, String... strings) throws FileSystemException, ParseException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public <T> List<T> readAndParseRecursively(ByteParser<T> parser, String... strings) throws FileSystemException, ParseException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void write(WriteOption wo, byte[] bytes, String... strings) throws FileSystemException
+        {
+            this.writeUsed = true;
+        }
+
+        @Override
+        public <T> void serializeAndWrite(WriteOption wo, 
+                ByteSerializer<T> serializer, List<T> list, String... strings) 
+                throws FileSystemException, SerializationException
+        {
+            this.serializeAndWriteUsed = true;
+        }
+
+        @Override
+        public void truncateFile(String... strings) throws FileSystemException
+        {
+            this.truncateFileUsed = true;
+        }
+        
     }
     
 }
@@ -277,5 +317,7 @@ class DummyLogHandler extends Handler
     {
         //ignore
     }
+    
+    
     
 }

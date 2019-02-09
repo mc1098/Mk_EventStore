@@ -25,5 +25,5 @@ import java.nio.ByteBuffer;
  */
 public interface ByteParser<T>
 {
-    public T fromBytes(ByteBuffer buffer) throws ParseException;
+    public T parse(ByteBuffer buffer) throws ParseException;
 }

@@ -16,10 +16,8 @@
  */
 package com.mc1098.mk_eventstore.Transaction;
 
-import com.mc1098.mk_eventstore.Exception.TransactionException;
-import java.io.IOException;
+import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -27,11 +25,23 @@ import java.util.concurrent.TimeUnit;
  */
 public interface TransactionPage
 {
-    public void writeTransaction(Transaction transaction) throws TransactionException;
-    public void writeTransaction(List<Transaction> transactions)throws TransactionException;
+    public void writeTransaction(Transaction transaction) throws EventStoreException;
+    public void writeTransaction(List<Transaction> transactions)throws EventStoreException;
     public boolean hasTransaction();
-    public Transaction poll(long l, TimeUnit tu) throws InterruptedException;
+    public Transaction peek();
     public void confirmTransactionProcessed(Transaction transaction);
-    public void truncateLog() throws IOException;
+    
+    /**
+     * This method will indicate the ability to truncate the Transaction Log on 
+     * before the next write.
+     * 
+     * Implementations do not need to guarantee that the truncation will take 
+     * place or even when this will take place. It should however guarantee 
+     * that the truncation will happen before the next write. 
+     * 
+     * This method should be non blocking and shouldn't cause any exceptions 
+     * even if called many times before the indicated truncation occurs.
+     */
+    public void truncateLog();
     public void refresh();
 }

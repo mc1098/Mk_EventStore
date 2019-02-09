@@ -14,13 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.mc1098.mk_eventstore.Event;
+package com.mc1098.mk_eventstore.Transaction;
 
-import java.io.Serializable;
 import com.mc1098.mk_eventstore.Exception.ParseException;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.ByteBuffer;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -32,10 +29,10 @@ import static org.junit.Assert.*;
  *
  * @author Max Cripps <43726912+mc1098@users.noreply.github.com>
  */
-public class SimpleEventFormatTest
+public class Mk_TransactionConverterTest
 {
     
-    public SimpleEventFormatTest()
+    public Mk_TransactionConverterTest()
     {
     }
     
@@ -60,43 +57,38 @@ public class SimpleEventFormatTest
     }
 
     @Test
-    public void testToBytesAndParse() throws ParseException
+    public void testToBytesAndParse() throws Exception
     {
         System.out.println("toBytesAndParse");
-        Event event = new Mk_Event("name", "tName", 1, 0, LocalDateTime.now(), 
-                new HashMap<String, Serializable>(){{put("value", 20);}});
-        SimpleEventFormat instance = new SimpleEventFormat();
-        byte[] bytes = instance.toBytes(event);
         
-        Event result = instance.parse(bytes);
+        Transaction expResult = new Transaction(TransactionType.PUT_EVENT, 0, 1,
+                1, 1, new byte[]{10,20,30});
         
-        assertEquals(event.getName(), result.getName());
-        assertEquals(event.getTargetEntityName(), result.getTargetEntityName());
-        assertEquals(event.getTargetEntityId(), result.getTargetEntityId());
-        assertEquals((int)event.getValue("value"), (int)result.getValue("value"));
-    }
-    
-    @Test (expected = ParseException.class)
-    public void testToBytes_Exception() throws ParseException
-    {
-        System.out.println("toBytes_Exception");
+        TransactionConverter parser = new Mk_TransactionConverter();
         
-        Map map = new HashMap();
-        map.put("keyToUnserializableObject", new Object());
-        Event e = new Mk_Event("TestEvent", "TestEntity", 1, 1, 
-                LocalDateTime.now(), map); //java erasure allows this illegal generic
-        SimpleEventFormat sef = new SimpleEventFormat();
-        sef.toBytes(e);
+        byte[] bytes = parser.toBytes(expResult);
+        Transaction result = parser.parse(ByteBuffer.wrap(bytes));
+        
+        assertEquals(expResult, result);
         
     }
     
     @Test (expected = ParseException.class)
-    public void testParse_Exception() throws ParseException
+    public void testParse_NotEnoughBytes() throws ParseException
     {
-        System.out.println("parse_Exception");
+        System.out.println("parse_MalformedBytes");
         
-        SimpleEventFormat sef = new SimpleEventFormat();
-        sef.parse(new byte[]{23, 61, 122});
+        TransactionConverter parser = new Mk_TransactionConverter();
+        parser.parse(ByteBuffer.wrap(new byte[]{1, 49}));
+    }
+    
+    @Test (expected = ParseException.class)
+    public void testParse_InvalidTypeByte() throws ParseException
+    {
+        System.out.println("parse_MalformedBytes");
+        
+        TransactionConverter parser = new Mk_TransactionConverter();
+        parser.parse(ByteBuffer.wrap(new byte[]{20, 49}));
     }
 
     

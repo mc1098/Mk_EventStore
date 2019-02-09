@@ -20,21 +20,18 @@ import com.mc1098.mk_eventstore.Entity.Mk_Snapshot;
 import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Event.Event;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
+import com.mc1098.mk_eventstore.Exception.FileSystem.FileSystemException;
 import com.mc1098.mk_eventstore.Exception.NoPageFoundException;
 import com.mc1098.mk_eventstore.Exception.SerializationException;
+import com.mc1098.mk_eventstore.FileSystem.RelativeFileSystem;
+import com.mc1098.mk_eventstore.FileSystem.WriteOption;
 import com.mc1098.mk_eventstore.Page.EntityPage;
-import com.mc1098.mk_eventstore.Page.EntityPageParser;
 import com.mc1098.mk_eventstore.Page.PageDirectory;
 import com.mc1098.mk_eventstore.Util.EventStoreUtils;
-import java.io.File;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.StandardOpenOption;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import com.mc1098.mk_eventstore.Page.EntityPageConverter;
 
 /**
  *
@@ -46,14 +43,17 @@ public class Mk_TransactionWorker extends TransactionWorker
     public static final Logger LOGGER = Logger
         .getLogger(TransactionWorker.class.getName());
     
+    private final RelativeFileSystem fileSystem;
     private final PageDirectory directory;
     private final TransactionPage transactionPage;
-    private final EntityPageParser entityPageParser;
+    private final EntityPageConverter entityPageParser;
     private final AtomicBoolean run;
     
-    public Mk_TransactionWorker(TransactionPage transactionPage, 
-            PageDirectory directory, EntityPageParser parser)
+    public Mk_TransactionWorker(RelativeFileSystem rfs, 
+            TransactionPage transactionPage, PageDirectory directory, 
+            EntityPageConverter parser)
     {
+        this.fileSystem = rfs;
         this.transactionPage = transactionPage;
         this.directory = directory;
         this.entityPageParser = parser;
@@ -72,12 +72,21 @@ public class Mk_TransactionWorker extends TransactionWorker
             try 
             {
                 processTransactions();
+                synchronized(this)
+                {
+                    wait(5000);
+                }
             } catch(EventStoreException ex)
             {
                 LOGGER.log(Level.SEVERE, "Unrecoverable or possibly data "
                         + "corrupting error has occurred.", ex);
                 getDefaultUncaughtExceptionHandler().uncaughtException(this, ex);
                 break;
+            } catch(InterruptedException ex)
+            {
+                LOGGER.log(Level.SEVERE, "Interruption exception thrown while "
+                    + "waiting for the next transaction.", ex);
+                Thread.currentThread().interrupt();
             }
         }
             
@@ -88,7 +97,7 @@ public class Mk_TransactionWorker extends TransactionWorker
         Transaction transaction = null;
         try
         {
-            transaction = transactionPage.poll(5, TimeUnit.SECONDS);
+            transaction = transactionPage.peek();
             if(transaction == null)
             {
                 transactionPage.truncateLog();
@@ -114,11 +123,7 @@ public class Mk_TransactionWorker extends TransactionWorker
                             transaction.getType().name()));
             }     
             
-        } catch (IOException ex)
-        {
-            LOGGER.log(Level.INFO, "Transaction worker was unable to truncate "
-                    + "the transaction log.", ex);
-        } catch(NoPageFoundException ex)
+        }catch(NoPageFoundException ex)
         {
             if(!run.get())
                 LOGGER.log(Level.INFO, "Transaction was unable to be processed "
@@ -131,12 +136,6 @@ public class Mk_TransactionWorker extends TransactionWorker
                         ex);
                 Thread.currentThread().interrupt();
             }
-        }
-        catch(InterruptedException ex)
-        {
-            LOGGER.log(Level.SEVERE, "Interruption exception thrown while "
-                    + "waiting for the next transaction.", ex);
-            Thread.currentThread().interrupt();
         }
     }
 
@@ -166,8 +165,7 @@ public class Mk_TransactionWorker extends TransactionWorker
                 expPageId);
         if (page.getCleanVersion() > transaction.getVersion())
         {
-            //already been saved
-            transactionPage.confirmTransactionProcessed(transaction);
+            transactionPage.confirmTransactionProcessed(transaction); //already been saved
             return;
         }
         if(page.getCleanVersion() < transaction.getVersion() ||
@@ -179,29 +177,15 @@ public class Mk_TransactionWorker extends TransactionWorker
             byte[] bytes = entityPageParser.toBytes(page);
             if(version == page.getCleanVersion())
             {
-                writePage(page, bytes);
+                fileSystem.write(WriteOption.WRITE, bytes, 
+                        Long.toHexString(page.getEntity()),
+                        Long.toHexString(page.getEntityId()), 
+                        Long.toHexString(page.getPageId()));
                 transactionPage.confirmTransactionProcessed(transaction);
             }
         }
         else
             transactionPage.confirmTransactionProcessed(transaction);
-    }
-
-    private void writePage(EntityPage page, byte[] bytes)  throws EventStoreException
-    {
-        File file = new File(String.format("./Entity/%s/%s/%s",  
-                Long.toHexString(page.getEntity()), 
-                Long.toHexString(page.getEntityId()), 
-                Long.toHexString(page.getPageId())));
-                
-        
-        try(FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.WRITE);)
-        {
-            fc.write(ByteBuffer.wrap(bytes));
-        } catch(IOException ex)
-        {
-            throw new EventStoreException("Failed to write Entity Page.", ex);
-        }
     }
 
     private void addEventToPage(EntityPage page, Transaction transaction) 
@@ -225,9 +209,10 @@ public class Mk_TransactionWorker extends TransactionWorker
         {
             while(transactionPage.hasTransaction())
                 processTransactions();
-            transactionPage.truncateLog();
-        } catch(IOException ex)
+            fileSystem.truncateFile("TL");
+        } catch(FileSystemException ex)
         {
+            LOGGER.log(Level.WARNING, "Unable to truncate the Transaction Log after flushing the pending transactions", ex);
             throw new EventStoreException(ex);
         }
     }
@@ -236,6 +221,10 @@ public class Mk_TransactionWorker extends TransactionWorker
     public void stopAfterTransaction() throws InterruptedException
     {
         run.set(false);
+        synchronized(this)
+        {
+            notifyAll();
+        }
     }
     
 }

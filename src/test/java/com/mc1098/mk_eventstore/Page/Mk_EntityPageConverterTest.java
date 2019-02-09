@@ -20,7 +20,7 @@ import com.mc1098.mk_eventstore.Entity.Mk_Snapshot;
 import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Event.Event;
 import com.mc1098.mk_eventstore.Event.Mk_Event;
-import com.mc1098.mk_eventstore.Event.SimpleEventFormat;
+import com.mc1098.mk_eventstore.Event.SimpleEventConverter;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import com.mc1098.mk_eventstore.Transaction.TransactionPage;
 import java.nio.ByteBuffer;
@@ -40,10 +40,10 @@ import static org.junit.Assert.*;
  *
  * @author Max Cripps <43726912+mc1098@users.noreply.github.com>
  */
-public class Mk_EntityPageParserTest
+public class Mk_EntityPageConverterTest
 {
     
-    public Mk_EntityPageParserTest()
+    public Mk_EntityPageConverterTest()
     {
     }
     
@@ -79,8 +79,8 @@ public class Mk_EntityPageParserTest
         EntityPage page = new Mk_EntityPage(0, 0, 1, 1, 20, 
                 new Mk_Snapshot("TestEntity", 1, 0, new byte[]{10,20,55}), events);
         
-        Mk_EntityPageParser instance = new Mk_EntityPageParser(new DummyDirectory(), 
-                new SimpleEventFormat());
+        Mk_EntityPageConverter instance = new Mk_EntityPageConverter(new DummyDirectory(), 
+                new SimpleEventConverter());
         
         byte[] bytes = instance.toBytes(page);
         EntityPage result = instance.parse(ByteBuffer.wrap(bytes));
@@ -156,16 +156,11 @@ public class Mk_EntityPageParserTest
         }
 
         @Override
-        public EntityPageParser getEntityPageParser()
+        public EntityPageConverter getEntityPageConverter()
         {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
-        @Override
-        public void setEntityPageParser(EntityPageParser parser)
-        {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
         
     }
     
