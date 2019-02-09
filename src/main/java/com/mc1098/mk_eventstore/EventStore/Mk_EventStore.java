@@ -48,6 +48,7 @@ import com.mc1098.mk_eventstore.FileSystem.PageFileSystem;
 import com.mc1098.mk_eventstore.FileSystem.RelativeFileSystem;
 import java.nio.file.Paths;
 import com.mc1098.mk_eventstore.Transaction.TransactionConverter;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  *
@@ -142,17 +143,15 @@ public class Mk_EventStore implements EventStore
         long entity = directory.getEntity(entityName);
         int erp = directory.getEPR(entity);
         long pageId = fromVer/erp;
-        long version = erp * pageId;
+        final AtomicLong version = new AtomicLong(erp * pageId); //final for lambda 
         
-        List<EntityPage> pages = directory.getEntityPages(entity, id, pageId);
         Queue<Event> events = new ArrayDeque<>();
-        for (EntityPage page : pages)
-            for (Event event : page.getEvents())
-            {
-                version+=1;
-                if(version > fromVer)
-                    events.add(event);
-            }
+        directory.consumeEntityPages(entity, id, pageId, (ep)-> 
+        {
+            for (Event e : ep.getEvents())
+                if(version.incrementAndGet() > fromVer)
+                    events.add(e);
+        });
         
         return events;
     }
@@ -163,20 +162,17 @@ public class Mk_EventStore implements EventStore
     {
         long entity = directory.getEntity(entityName);
         int erp = directory.getEPR(entity);
-        long pageId = fromVer/erp;
-        long version = erp * pageId;
-        long pageId1 = toVer/erp;
+        long pageFrom = fromVer/erp;
+        final AtomicLong version = new AtomicLong(erp * pageFrom);
+        long pageTo = toVer/erp;
         
-        List<EntityPage> pages = directory.getEntityPages(entity, id, pageId, pageId1);
         Queue<Event> events = new ArrayDeque<>();
-        for (EntityPage page : pages)
-            for (Event event : page.getEvents())
-            {
-                version+=1;
-                if(version > fromVer && version <= toVer)
-                    events.add(event);
-            }
-        
+        directory.consumeEntityPages(entity, id, pageFrom, pageTo, (ep) -> 
+        {
+            for (Event e : ep.getEvents())
+                if(version.incrementAndGet() > fromVer && version.get() <= toVer)
+                    events.add(e);
+        });
         return events;
     }
     
