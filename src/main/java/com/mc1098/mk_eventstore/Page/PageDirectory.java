@@ -35,8 +35,51 @@ public interface PageDirectory
     public EntityPage getEntityPage(long entity, long id) throws EventStoreException;
     public EntityPage getEntityPage(long entity, long id, long pageNo) 
             throws EventStoreException;
+    
+    /**
+     * This method reads and consumes the pages, with the provided 
+     * {@link Consumer}, from the fromPage parameter provided (inclusive) to
+     * the most recent page for the Entity Id. 
+     * 
+     * Implementations of this method may not guarantee atomic consuming of 
+     * the EntityPages, therefore consuming of some pages maybe performed before
+     * this method is interrupted with an Exception. Consumers that causes change
+     * in state directly is not recommended unless an implementation of this 
+     * method guarantees atomic consuming.
+     * 
+     * Implementations must guarantee that consuming, regardless of it's atomicity, 
+     * is done in ascending page order from the first page parameter given.
+     * 
+     * @param entity Representative number for the Entity.
+     * @param id Id of the Entity.
+     * @param fromPage PageId from which to start reading and consuming (inclusive).
+     * @param cnsmr Consumer to use for each page read.
+     * @throws EventStoreException 
+     */
     public void consumeEntityPages(long entity, long id, long fromPage, 
             Consumer<EntityPage> cnsmr) throws EventStoreException;
+    
+    /**
+     * This method reads and consumes the pages, with the provided 
+     * {@link Consumer}, from the fromPage parameter provided (inclusive) to
+     * the toPage parameter provided (exclusive).
+     * 
+     * Implementations of this method may not guarantee atomic consuming of 
+     * the EntityPages, therefore consuming of some pages maybe performed before
+     * this method is interrupted with an Exception. Consumers that causes change
+     * in state directly is not recommended unless an implementation of this 
+     * method guarantees atomic consuming.
+     * 
+     * Implementations must guarantee that consuming, regardless of it's atomicity, 
+     * is done in ascending page order from the first page parameter given.
+     * 
+     * @param entity Representative number for the Entity.
+     * @param id Id of the Entity.
+     * @param fromPage PageId from which to start reading and consuming (inclusive).
+     * @param toPage PageId to end reading and consuming (exclusive).
+     * @param cnsmr Consumer to use for each page read.
+     * @throws EventStoreException 
+     */
     public void consumeEntityPages(long entity, long id, long fromPage, 
             long toPage, Consumer<EntityPage> cnsmr) throws EventStoreException;
     public EntityPage createPendingEntityPage(long entity, long id, long pageNo, Snapshot snapshot);
