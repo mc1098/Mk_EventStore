@@ -35,6 +35,15 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 import com.mc1098.mk_eventstore.Page.EntityPageConverter;
 import com.mc1098.mk_eventstore.Event.EventConverter;
+import com.mc1098.mk_eventstore.Exception.FileSystem.FileSystemException;
+import com.mc1098.mk_eventstore.Exception.ParseException;
+import com.mc1098.mk_eventstore.Exception.SerializationException;
+import com.mc1098.mk_eventstore.FileSystem.ByteParser;
+import com.mc1098.mk_eventstore.FileSystem.ByteSerializer;
+import com.mc1098.mk_eventstore.FileSystem.RelativeFileSystem;
+import com.mc1098.mk_eventstore.FileSystem.WriteOption;
+import java.io.File;
+import java.nio.file.Path;
 
 /**
  *
@@ -74,14 +83,15 @@ public class Mk_TransactionWorkerTest
         
         Transaction transaction = null;
         
+        DummyFileSystem dfs = new DummyFileSystem();
         DummyTransactionPage dtp = new DummyTransactionPage(transaction);
         DummyPageDirectory dpd = null;
-        Mk_TransactionWorker instance = new Mk_TransactionWorker(null, dtp, dpd, null);
+        Mk_TransactionWorker instance = new Mk_TransactionWorker(dfs, dtp, dpd, null);
         instance.flush();
         
         assertTrue("Expect truncate log to be called when null transaction is "
                 + "returned, which is only expected when the queue is empty.", 
-                dtp.wasTruncateUsed);
+                dfs.truncateFileUsed);
         
     }
 
@@ -93,12 +103,13 @@ public class Mk_TransactionWorkerTest
         Transaction transaction = new Transaction(TransactionType.PUT_SNAPSHOT, 
                 0, 0, 1, 0, new byte[]{22});
         
+        DummyFileSystem dfs = new DummyFileSystem();
         DummyTransactionPage dtp = new DummyTransactionPage(transaction);
         DummyPageDirectory dpd = new DummyPageDirectory();
         EventConverter ef = new SimpleEventConverter();
         EntityPageConverter parser = new Mk_EntityPageConverter(dpd, ef);
         
-        Mk_TransactionWorker instance = new Mk_TransactionWorker(null, dtp, dpd, parser);
+        Mk_TransactionWorker instance = new Mk_TransactionWorker(dfs, dtp, dpd, parser);
         instance.flush();
         
         assertEquals("Expect transaction confirmed to be equal to the one loaded"
@@ -132,13 +143,14 @@ public class Mk_TransactionWorkerTest
         EntityPage page = new Mk_EntityPage(0, 0, 1, 10, 
                 new Mk_Snapshot("testEntity", 1, 0, new byte[]{10}));
         
+        DummyFileSystem dfs = new DummyFileSystem();
         DummyTransactionPage dtp = new DummyTransactionPage(transaction);
         DummyPageDirectory dpd = new DummyPageDirectory();
         dpd.page = page;
         EventConverter ef = new SimpleEventConverter();
         EntityPageConverter parser = new Mk_EntityPageConverter(dpd, ef);
         
-        Mk_TransactionWorker instance = new Mk_TransactionWorker(null, dtp, dpd, parser);
+        Mk_TransactionWorker instance = new Mk_TransactionWorker(dfs, dtp, dpd, parser);
         instance.flush();
         
         assertEquals(transaction, dtp.transaction);
@@ -192,7 +204,6 @@ public class Mk_TransactionWorkerTest
         int transactions = 1;
         public Transaction transaction;
         public boolean wasTransactionConfirmedProcessed;
-        private boolean wasTruncateUsed;
         
         public DummyTransactionPage(Transaction transaction)
         {
@@ -236,9 +247,8 @@ public class Mk_TransactionWorkerTest
         }
 
         @Override
-        public void truncateLog() throws IOException
+        public void truncateLog() 
         {
-            this.wasTruncateUsed = true;
             //ignore
         }
 
@@ -333,6 +343,97 @@ public class Mk_TransactionWorkerTest
         public EntityPageConverter getEntityPageConverter()
         {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+        
+    }
+    
+    class DummyFileSystem implements RelativeFileSystem
+    {
+
+        public boolean truncateFileUsed;
+
+        @Override
+        public String getRootPath()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public Path getRelativePath(String... strings)
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public File getDirectory(String... strings) throws FileSystemException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public File getOrCreateDirectory(String... strings) throws FileSystemException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public File getFile(String... strings) throws FileSystemException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void createFile(String... strings) throws FileSystemException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public File getOrCreateFile(String... strings) throws FileSystemException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public boolean doesFileExist(String... strings)
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public byte[] read(String... strings) throws FileSystemException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public <T> T readAndParse(ByteParser<T> parser, String... strings) throws FileSystemException, ParseException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public <T> List<T> readAndParseRecursively(ByteParser<T> parser, String... strings) throws FileSystemException, ParseException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void write(WriteOption wo, byte[] bytes, String... strings) throws FileSystemException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public <T> void serializeAndWrite(WriteOption wo, ByteSerializer<T> serializer, List<T> list, String... strings) throws FileSystemException, SerializationException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void truncateFile(String... strings) throws FileSystemException
+        {
+            this.truncateFileUsed = true;
         }
         
     }
