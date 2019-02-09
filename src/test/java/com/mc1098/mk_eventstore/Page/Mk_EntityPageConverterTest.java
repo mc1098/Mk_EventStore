@@ -29,6 +29,7 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Queue;
+import java.util.function.Consumer;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -125,17 +126,6 @@ public class Mk_EntityPageConverterTest
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
-        @Override
-        public List<EntityPage> getEntityPages(long entity, long id, long pageFrom) throws EventStoreException
-        {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public List<EntityPage> getEntityPages(long entity, long id, long pageNo, long pageNo1) throws EventStoreException
-        {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
 
         @Override
         public EntityPage createPendingEntityPage(long entity, long id, long pageNo, Snapshot snapshot)
@@ -157,6 +147,18 @@ public class Mk_EntityPageConverterTest
 
         @Override
         public EntityPageConverter getEntityPageConverter()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void consumeEntityPages(long entity, long id, long fromPage, Consumer<EntityPage> cnsmr) throws EventStoreException
+        {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void consumeEntityPages(long entity, long id, long fromPage, long toPage, Consumer<EntityPage> cnsmr) throws EventStoreException
         {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
