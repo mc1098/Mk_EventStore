@@ -44,7 +44,7 @@ public class Mk_TransactionPage implements TransactionPage
     private final BlockingQueue<Transaction> transactions;
     private final Queue<Transaction> pending;
     private final TransactionConverter parser;
-    private final String file = "TL";
+    private static final String TL = "TL";
     
     public Mk_TransactionPage(RelativeFileSystem rfs, 
             TransactionConverter parser)
@@ -70,9 +70,9 @@ public class Mk_TransactionPage implements TransactionPage
     public void writeTransaction(Transaction transaction) throws EventStoreException
     {
         if(truncatePending.get())
-            fileSystem.truncateFile(file);
+            fileSystem.truncateFile(TL);
         byte[] bytes = parser.toBytes(transaction);
-        fileSystem.write(WriteOption.APPEND, bytes, file);
+        fileSystem.write(WriteOption.APPEND, bytes, TL);
         pending.add(transaction);
         truncatePending.set(false);
     }
@@ -82,9 +82,9 @@ public class Mk_TransactionPage implements TransactionPage
             throws EventStoreException
     {
         if(truncatePending.get())
-            fileSystem.truncateFile(file);
+            fileSystem.truncateFile(TL);
         fileSystem.serializeAndWrite(WriteOption.APPEND, parser, transactions, 
-                file);
+                TL);
         this.pending.addAll(transactions);
         truncatePending.set(false);
     }
