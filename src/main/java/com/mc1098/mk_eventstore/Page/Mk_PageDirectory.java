@@ -32,6 +32,7 @@ import java.util.Objects;
 import com.mc1098.mk_eventstore.Event.EventConverter;
 import com.mc1098.mk_eventstore.Exception.FileSystem.FileSystemException;
 import com.mc1098.mk_eventstore.FileSystem.WriteOption;
+import java.util.function.Consumer;
 
 /**
  *
@@ -64,7 +65,7 @@ public class Mk_PageDirectory implements PageDirectory
     
     private final RelativeFileSystem fileSystem;
     private final TouchMap<String, EntityPage> entityPages;
-    private EntityPageConverter entityPageConverter;
+    private final EntityPageConverter entityPageConverter;
     private final Map<String, Long> entityNames;
     private final Map<Long, Integer> entityERP;
     private final Map<String, EntityPage> pending;
@@ -169,28 +170,43 @@ public class Mk_PageDirectory implements PageDirectory
         
         return fileSystem.readAndParse(entityPageConverter, path);
     }
-
+    
     @Override
-    public List<EntityPage> getEntityPages(long entity, long id, long pageFrom) throws 
-            EventStoreException
+    public void consumeEntityPages(long entity, long id, long fromPage, 
+            Consumer<EntityPage> cnsmr) throws EventStoreException
     {
-        File file = fileSystem.getOrCreateDirectory(Long.toHexString(entity), 
+        File file = fileSystem.getDirectory(Long.toHexString(entity), 
                 Long.toHexString(id));
-        long files = file.list().length;
-        return getEntityPages(entity, id, pageFrom, files);
-    }
-
-    @Override
-    public List<EntityPage> getEntityPages(long entity, long id, long pageNo, long pageNo1) 
-            throws EventStoreException
-    {
-        List<EntityPage> pages = new ArrayList<>();
+        long pages = file.list().length;
         
-        for (long i = pageNo; i < pageNo1; i++)
-            pages.add(getEntityPage(entity, id, i));
-        return pages;
+        consumeEntityPages(entity, id, fromPage, pages, cnsmr);
+        
+    }
+    
+    @Override
+    public void consumeEntityPages(long entity, long id, long fromPage, 
+            long toPage, Consumer<EntityPage> cnsmr) throws EventStoreException
+    {
+        List<EntityPage> list = new ArrayList<>();
+        
+        for (long i = fromPage; i < toPage; i++)
+        {
+            list.add(fileSystem.readAndParse(entityPageConverter, 
+                    Long.toHexString(entity), Long.toHexString(id), 
+                    Long.toHexString(i)));
+            if(i % 10 == 0)
+                consumeAndClear(list, cnsmr);
+        }
+        consumeAndClear(list, cnsmr);
     }
 
+    private void consumeAndClear(List<EntityPage> list, 
+            Consumer<EntityPage> cnsmr)
+    {
+        list.forEach(cnsmr);
+        list.clear();
+    }
+    
     @Override
     public EntityPage createPendingEntityPage(long entity, long id, 
             long pageNo, Snapshot snapshot)

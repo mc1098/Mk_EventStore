@@ -19,7 +19,7 @@ package com.mc1098.mk_eventstore.Page;
 import com.mc1098.mk_eventstore.Entity.Snapshot;
 import com.mc1098.mk_eventstore.Exception.EventStoreException;
 import com.mc1098.mk_eventstore.Transaction.TransactionPage;
-import java.util.List;
+import java.util.function.Consumer;
 
 /**
  *
@@ -35,10 +35,10 @@ public interface PageDirectory
     public EntityPage getEntityPage(long entity, long id) throws EventStoreException;
     public EntityPage getEntityPage(long entity, long id, long pageNo) 
             throws EventStoreException;
-    public List<EntityPage> getEntityPages(long entity, long id, long pageFrom) 
-            throws EventStoreException;
-    public List<EntityPage> getEntityPages(long entity, long id, long pageNo, long pageNo1) 
-            throws EventStoreException;
+    public void consumeEntityPages(long entity, long id, long fromPage, 
+            Consumer<EntityPage> cnsmr) throws EventStoreException;
+    public void consumeEntityPages(long entity, long id, long fromPage, 
+            long toPage, Consumer<EntityPage> cnsmr) throws EventStoreException;
     public EntityPage createPendingEntityPage(long entity, long id, long pageNo, Snapshot snapshot);
     public EntityPage confirmPendingPage(EntityPage page) throws EventStoreException;
     public TransactionPage getTransactionPage();
