@@ -61,8 +61,8 @@ public class PageFileSystem implements RelativeFileSystem
         
     }
     
-    private final static String LOG_MSG_MKDIRS = "Created directories to form path {0}.";
-    private final static Logger LOGGER = Logger.getLogger(PageFileSystem.class.getName());
+    private static final String LOG_MSG_MKDIRS = "Created directories to form path {0}.";
+    private static final Logger LOGGER = Logger.getLogger(PageFileSystem.class.getName());
     
     private final String root;
     
