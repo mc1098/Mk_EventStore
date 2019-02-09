@@ -121,7 +121,7 @@ public class Mk_EventStoreTest
         File enmFile = new File("Entity/ENM");
         RelativeFileSystem rfs = PageFileSystem.ofRoot(Paths.get("Entity"));
         TransactionConverter parser = new Mk_TransactionConverter();
-        TransactionPage transactionPage = new Mk_TransactionPage(transactionLog, parser);
+        TransactionPage transactionPage = new Mk_TransactionPage(rfs, parser);
         PageDirectory directory = Mk_PageDirectory.setup(rfs, new SimpleEventConverter(), transactionPage);
         EventStore expResult = new Mk_EventStore(directory, transactionPage, null);
         
@@ -142,7 +142,7 @@ public class Mk_EventStoreTest
         enmFile.createNewFile();
         RelativeFileSystem rfs = PageFileSystem.ofRoot(Paths.get("Entity"));
         TransactionConverter parser = new Mk_TransactionConverter();
-        TransactionPage transactionPage = new Mk_TransactionPage(transactionLog, parser);
+        TransactionPage transactionPage = new Mk_TransactionPage(rfs, parser);
         PageDirectory directory = Mk_PageDirectory.setup(rfs, new SimpleEventConverter(), transactionPage);
         EventStore expResult = new Mk_EventStore(directory, transactionPage, null);
         
@@ -167,7 +167,7 @@ public class Mk_EventStoreTest
         {
             
             TransactionConverter parser = new Mk_TransactionConverter();
-            TransactionPage transactionPage = new Mk_TransactionPage(transactionLog, parser);
+            TransactionPage transactionPage = new Mk_TransactionPage(rfs, parser);
             PageDirectory directory = Mk_PageDirectory.setup(rfs, new SimpleEventConverter(), transactionPage);
             Mk_EventStore.create(rfs, directory, transactionPage);
         }
@@ -403,7 +403,7 @@ public class Mk_EventStoreTest
         File enm = new File("Entity/ENM");
         enm.createNewFile();
         RelativeFileSystem rfs = PageFileSystem.ofRoot(Paths.get("Entity"));
-        TransactionPage transactionPage = new Mk_TransactionPage(transactionLog, null);
+        TransactionPage transactionPage = new Mk_TransactionPage(rfs, null);
         PageDirectory directory = Mk_PageDirectory.setup(rfs, null, transactionPage);
         
         Mk_EventStore es = new Mk_EventStore(directory, transactionPage, null);
@@ -557,7 +557,7 @@ public class Mk_EventStoreTest
         }
 
         @Override
-        public void truncateLog() throws IOException
+        public void truncateLog()
         {}
 
         @Override
