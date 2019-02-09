@@ -39,7 +39,6 @@ import com.mc1098.mk_eventstore.Transaction.TransactionPage;
 import com.mc1098.mk_eventstore.Transaction.TransactionType;
 import com.mc1098.mk_eventstore.Transaction.TransactionWorker;
 import java.io.File;
-import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.StandardOpenOption;
@@ -59,6 +58,7 @@ import static org.junit.Assert.*;
 import com.mc1098.mk_eventstore.Page.EntityPageConverter;
 import com.mc1098.mk_eventstore.Transaction.TransactionConverter;
 import java.nio.file.Paths;
+import java.util.function.Consumer;
 
 /**
  *
@@ -476,17 +476,19 @@ public class Mk_EventStoreTest
             wasGetEntityPageUsed = true;
             return page;
         }
-
+        
         @Override
-        public List<EntityPage> getEntityPages(long entity, long id, long pageFrom) throws EventStoreException
+        public void consumeEntityPages(long entity, long id, long pageFrom, 
+                Consumer<EntityPage> cnsmr) throws EventStoreException
         {
-            return new ArrayList<EntityPage>(){{add(getEntityPage(entity, id, pageFrom));}};
+            cnsmr.accept(getEntityPage(entity, id, pageFrom));
         }
-
+        
         @Override
-        public List<EntityPage> getEntityPages(long entity, long id, long pageNo, long pageNo1) throws EventStoreException
+        public void consumeEntityPages(long entity, long id, long pageFrom, 
+                long pageTo, Consumer<EntityPage> cnsmr) throws EventStoreException
         {
-            return getEntityPages(entity, id, pageNo);
+            cnsmr.accept(getEntityPage(entity, id, pageFrom));
         }
 
         @Override
