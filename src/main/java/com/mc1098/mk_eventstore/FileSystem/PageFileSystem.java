@@ -276,6 +276,27 @@ public class PageFileSystem implements RelativeFileSystem
             throw new FileSystemException(ex);
         }
     }
+    
+    @Override
+    public void truncateFile(String...strings) throws FileSystemException
+    {
+        Path path = getRelativePath(strings);
+        File file = path.toFile();
+        
+        if(!file.exists() || file.isDirectory())
+            throw new FileSystemException(String.format("Unable to truncate file"
+                    + " %s at path %s as it doesn't exist or is a directory", 
+                    file.getName(), file.getPath()));
+        
+        try(FileChannel fc = FileChannel.open(path, WriteOption.WRITE.option()))
+        {
+            if(fc.size() != 0)
+                fc.truncate(0);
+        } catch(IOException ex)
+        {
+            throw new FileSystemException("Unable to truncate file", ex);
+        }
+    }
 
     @Override
     public boolean equals(Object o)
