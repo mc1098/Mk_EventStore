@@ -6,7 +6,7 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=com.mc1098%3Amk_EventStore&metric=coverage)](https://sonarcloud.io/dashboard?id=com.mc1098%3Amk_EventStore)
 
 
-A simple EventStore project for saving Entity's using event sourcing. Provides a custom method for saving Events and Snapshots in an effort to reduce the amount of IO to a minimum. 
+A EventStore project for saving Entity's using event sourcing. Provides a custom method for saving Events and Snapshots in an effort to reduce the amount of IO to a minimum. 
 Transactional and atomic updating of events. 
 
 Version 0.5
